@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes';
 
 dotenv.config();
 
@@ -15,6 +16,8 @@ mongoose
   .catch((error) => console.error('Error connecting to MongoDB:', error));
 
 app.use(bodyParser.json());
+
+app.use('/auth', authRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
