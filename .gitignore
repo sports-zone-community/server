@@ -1,0 +1,60 @@
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# TypeScript files
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
+# Editor settings
+.vscode/
+.idea/
+*.swp
+
+# Dependency directories
+coverage/
+temp/
+
+# Optional npm cache directory
+.npm/
+
+# Optional yarn cache
+.yarn/
+.pnp.*
+
+# Jest test outputs
+jest-test-results.json
+.vscode-test/
+
+# Production files (if generated locally)
+*.tgz
+
+# Mac-specific files
+.AppleDouble
+.LSOverride
+
+# TypeScript
+*.tsbuildinfo
+
+# Ignore generated files from build tools
+*.map
+*.d.ts
+
+# Optional log files from yarn and npm
+.yarn-integrity
+package-lock.json
+yarn.lock
