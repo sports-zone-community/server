@@ -1,12 +1,12 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "dev": "nodemon",
-    "start": "ts-node src/app.ts",
+    "start": "ts-node src/server.ts",
     "build": "tsc",
-    "serve": "node dist/index.js",
+    "serve": "node dist/server.js",
     "test": "jest --detectOpenHandles --forceExit --coverage"
   },
   "author": "",
