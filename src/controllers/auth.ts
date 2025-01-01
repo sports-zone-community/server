@@ -3,19 +3,24 @@ import { IUser, User } from '../models/user.model';
 import { compare, genSalt, hash } from 'bcryptjs';
 import { Secret, sign, verify } from 'jsonwebtoken';
 import { extractTokenFromRequest } from '../utils/utils';
+import { StatusCodes } from 'http-status-codes';
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, username } = req.body;
+  const { email, password, username, fullName } = req.body;
 
-  if (!email || !password || !username) {
-    res.json({ error: 'Please fill all fields' });
+  if (!email || !password || !username || !fullName) {
+    res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ error: 'Please fill all fields' });
     return;
   }
 
   try {
     const user = await User.findOne({ email });
     if (user) {
-      res.json({ error: 'User already exists' });
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: 'User already exists' });
       return;
     }
 
@@ -25,44 +30,57 @@ export const register = async (req: Request, res: Response) => {
       email,
       password: encryptedPassword,
       username,
+      fullName,
     });
     await newUser.save();
 
     res.json({ message: 'User registered successfully', newUser });
   } catch (error: any) {
     console.error('Error registering user: ', error.message);
-    res.status(403).json({ error: error.message });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!username || !password) {
-    res.json({ error: 'Please fill all fields' });
+  if (!email || !password) {
+    res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ error: 'Please fill all fields' });
     return;
   }
 
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email });
     if (!user) {
-      res.json({ error: 'User does not exist' });
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ error: 'User does not exist' });
       return;
     }
 
     const isMatch = await compare(password, user.password);
     if (!isMatch) {
-      res.json({ error: 'Invalid credentials' });
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ error: 'Invalid credentials' });
       return;
     }
 
     const { accessToken, refreshToken } = signTokens(user.id);
-    user.tokens = user.tokens ? [...user.tokens, refreshToken] : [refreshToken];
+    user.tokens = user.tokens.length
+      ? [...user.tokens, refreshToken]
+      : [refreshToken];
     await user.save();
 
     res.json({ accessToken, refreshToken });
   } catch (error: any) {
-    res.status(403).json({ error: error.message });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
 };
 
@@ -70,7 +88,7 @@ export const refreshToken = async (req: Request, res: Response) => {
   const token = extractTokenFromRequest(req);
 
   if (!token) {
-    res.status(401);
+    res.status(StatusCodes.BAD_REQUEST).json({ error: 'Invalid request' });
     return;
   }
 
@@ -79,7 +97,9 @@ export const refreshToken = async (req: Request, res: Response) => {
     process.env.REFRESH_TOKEN_SECRET as Secret,
     async (error, userInfo: any) => {
       if (error) {
-        return res.status(403).send(error.message);
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ error: 'Invalid token' });
       }
 
       const userId = userInfo.id;
@@ -87,13 +107,17 @@ export const refreshToken = async (req: Request, res: Response) => {
       try {
         const user = await User.findById(userId);
         if (!user) {
-          return res.status(403).send('Invalid request');
+          return res
+            .status(StatusCodes.UNAUTHORIZED)
+            .json({ error: 'user not found' });
         }
 
         if (!user.tokens.includes(token)) {
           user.tokens = [];
           await user.save();
-          return res.status(403).send('Invalid request');
+          return res
+            .status(StatusCodes.UNAUTHORIZED)
+            .json({ error: 'token not found' });
         }
 
         const { accessToken, refreshToken } = signTokens(userId);
@@ -103,7 +127,9 @@ export const refreshToken = async (req: Request, res: Response) => {
         res.send({ accessToken, refreshToken });
       } catch (error: any) {
         console.error('Error refreshing token: ', error.message);
-        res.status(403).json({ error: error.message });
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ error: error.message });
       }
     },
   );
@@ -113,7 +139,7 @@ export const logout = (req: Request, res: Response) => {
   const token = extractTokenFromRequest(req);
 
   if (!token) {
-    res.status(401);
+    res.status(StatusCodes.BAD_REQUEST).json({ error: 'Invalid request' });
     return;
   }
 
@@ -122,7 +148,9 @@ export const logout = (req: Request, res: Response) => {
     process.env.REFRESH_TOKEN_SECRET as Secret,
     async (error, userInfo: any) => {
       if (error) {
-        return res.status(403).send(error.message);
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ error: 'Invalid token' });
       }
 
       const userId = userInfo.id;
@@ -130,13 +158,17 @@ export const logout = (req: Request, res: Response) => {
       try {
         const user = await User.findById(userId);
         if (!user) {
-          return res.status(403).send('Invalid request');
+          return res
+            .status(StatusCodes.UNAUTHORIZED)
+            .json({ error: 'user not found' });
         }
 
         if (!user.tokens.includes(token)) {
           user.tokens = [];
           await user.save();
-          return res.status(403).send('Invalid request');
+          return res
+            .status(StatusCodes.UNAUTHORIZED)
+            .json({ error: 'token not found' });
         }
 
         user.tokens.splice(user.tokens.indexOf(token), 1);
@@ -145,7 +177,9 @@ export const logout = (req: Request, res: Response) => {
         res.send('User logged out successfully');
       } catch (error: any) {
         console.error('Error logging out user: ', error.message);
-        res.status(403).json({ error: error.message });
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ error: error.message });
       }
     },
   );
