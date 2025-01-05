@@ -2,13 +2,20 @@ import { Request, Response } from 'express';
 import { IUser, User } from '../models/user.model';
 import { compare, genSalt, hash } from 'bcryptjs';
 import { Secret, sign, verify } from 'jsonwebtoken';
-import { extractTokenFromRequest } from '../utils/utils';
+import {
+  extractTokenFromRequest,
+  logEndFunction,
+  logError,
+  logStartFunction,
+} from '../utils/utils';
 import { StatusCodes } from 'http-status-codes';
 
 export const register = async (req: Request, res: Response) => {
+  logStartFunction('register');
   const { email, password, username, fullName } = req.body;
 
   if (!email || !password || !username || !fullName) {
+    logError('Please fill all fields', 'register');
     res
       .status(StatusCodes.BAD_REQUEST)
       .json({ error: 'Please fill all fields' });
@@ -16,8 +23,12 @@ export const register = async (req: Request, res: Response) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      $or: [{ email }, { username }],
+    });
+
     if (user) {
+      logError('User already exists', 'register');
       res
         .status(StatusCodes.BAD_REQUEST)
         .json({ error: 'User already exists' });
@@ -34,9 +45,10 @@ export const register = async (req: Request, res: Response) => {
     });
     await newUser.save();
 
-    res.json({ message: 'User registered successfully', newUser });
+    logEndFunction('register');
+    res.json({ message: 'User registered successfully' });
   } catch (error: any) {
-    console.error('Error registering user: ', error.message);
+    logError(error.message, 'register');
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ error: error.message });
@@ -44,9 +56,11 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
+  logStartFunction('login');
   const { email, password } = req.body;
 
   if (!email || !password) {
+    logError('Please fill all fields', 'login');
     res
       .status(StatusCodes.BAD_REQUEST)
       .json({ error: 'Please fill all fields' });
@@ -56,6 +70,7 @@ export const login = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
+      logError('User does not exist', 'login');
       res
         .status(StatusCodes.UNAUTHORIZED)
         .json({ error: 'User does not exist' });
@@ -64,6 +79,7 @@ export const login = async (req: Request, res: Response) => {
 
     const isMatch = await compare(password, user.password);
     if (!isMatch) {
+      logError('Invalid credentials', 'login');
       res
         .status(StatusCodes.UNAUTHORIZED)
         .json({ error: 'Invalid credentials' });
@@ -76,6 +92,7 @@ export const login = async (req: Request, res: Response) => {
       : [refreshToken];
     await user.save();
 
+    logEndFunction('login');
     res.json({ accessToken, refreshToken });
   } catch (error: any) {
     res
@@ -85,9 +102,11 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
+  logStartFunction('refreshToken');
   const token = extractTokenFromRequest(req);
 
   if (!token) {
+    logError('Invalid request', 'refreshToken');
     res.status(StatusCodes.BAD_REQUEST).json({ error: 'Invalid request' });
     return;
   }
@@ -97,6 +116,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     process.env.REFRESH_TOKEN_SECRET as Secret,
     async (error, userInfo: any) => {
       if (error) {
+        logError('Invalid token', 'refreshToken');
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json({ error: 'Invalid token' });
@@ -107,12 +127,14 @@ export const refreshToken = async (req: Request, res: Response) => {
       try {
         const user = await User.findById(userId);
         if (!user) {
+          logError('User not found', 'refreshToken');
           return res
             .status(StatusCodes.UNAUTHORIZED)
             .json({ error: 'user not found' });
         }
 
         if (!user.tokens.includes(token)) {
+          logError('Token not found', 'refreshToken');
           user.tokens = [];
           await user.save();
           return res
@@ -124,9 +146,10 @@ export const refreshToken = async (req: Request, res: Response) => {
         user.tokens[user.tokens.indexOf(token)] = refreshToken;
         await user.save();
 
+        logEndFunction('refreshToken');
         res.send({ accessToken, refreshToken });
       } catch (error: any) {
-        console.error('Error refreshing token: ', error.message);
+        logError(error.message, 'refreshToken');
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ error: error.message });
@@ -136,9 +159,11 @@ export const refreshToken = async (req: Request, res: Response) => {
 };
 
 export const logout = (req: Request, res: Response) => {
+  logStartFunction('logout');
   const token = extractTokenFromRequest(req);
 
   if (!token) {
+    logError('Invalid request', 'logout');
     res.status(StatusCodes.BAD_REQUEST).json({ error: 'Invalid request' });
     return;
   }
@@ -148,6 +173,7 @@ export const logout = (req: Request, res: Response) => {
     process.env.REFRESH_TOKEN_SECRET as Secret,
     async (error, userInfo: any) => {
       if (error) {
+        logError('Invalid token', 'logout');
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json({ error: 'Invalid token' });
@@ -158,12 +184,14 @@ export const logout = (req: Request, res: Response) => {
       try {
         const user = await User.findById(userId);
         if (!user) {
+          logError('User not found', 'logout');
           return res
             .status(StatusCodes.UNAUTHORIZED)
             .json({ error: 'user not found' });
         }
 
         if (!user.tokens.includes(token)) {
+          logError('Token not found', 'logout');
           user.tokens = [];
           await user.save();
           return res
@@ -174,6 +202,7 @@ export const logout = (req: Request, res: Response) => {
         user.tokens.splice(user.tokens.indexOf(token), 1);
         await user.save();
 
+        logEndFunction('logout');
         res.send('User logged out successfully');
       } catch (error: any) {
         console.error('Error logging out user: ', error.message);
