@@ -1,15 +1,10 @@
 import supertest from 'supertest';
-// import app from '../setup/jest.setup';
 import { StatusCodes } from 'http-status-codes';
 import { hash } from 'bcryptjs';
 import { User } from '../../models/user.model';
 import app from '../../app';
 
 describe('AUTH ROUTES - POST /auth/register', () => {
-  // afterEach(async () => {
-  //   await User.deleteMany({});
-  // });
-
   it('should register a new user', async () => {
     const mockUserRequest = {
       email: 'test@example.com',

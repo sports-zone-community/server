@@ -1,7 +1,6 @@
 import { User } from '../../models/user.model';
 import { sign } from 'jsonwebtoken';
 import supertest from 'supertest';
-// import app from '../setup/jest.setup';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
 import app from '../../app';

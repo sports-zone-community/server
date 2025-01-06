@@ -158,7 +158,7 @@ export const refreshToken = async (req: Request, res: Response) => {
   );
 };
 
-export const logout = (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response) => {
   logStartFunction('logout');
   const token = extractTokenFromRequest(req);
 
@@ -205,13 +205,33 @@ export const logout = (req: Request, res: Response) => {
         logEndFunction('logout');
         res.send('User logged out successfully');
       } catch (error: any) {
-        console.error('Error logging out user: ', error.message);
+        logError(error.message, 'logout');
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ error: error.message });
       }
     },
   );
+};
+
+export const verifyUser = async (req: Request, res: Response) => {
+  logStartFunction('verifyUser');
+  try {
+    const user = await User.findById(req?.user?.id).select('-password -tokens');
+    if (!user) {
+      logError('User not found', 'verifyUser');
+      res.status(StatusCodes.UNAUTHORIZED).json({ error: 'User not found' });
+      return;
+    }
+
+    logEndFunction('verifyUser');
+    res.json({ user });
+  } catch (error: any) {
+    logError(error.message, 'verifyUser');
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
+  }
 };
 
 const signTokens = (

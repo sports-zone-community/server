@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon",
-    "start": "ts-node src/server.ts",
+    "start": "ts-node src/index.ts",
     "build": "tsc",
     "serve": "node dist/server.js",
     "test": "jest --detectOpenHandles --forceExit --coverage"
