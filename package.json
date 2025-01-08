@@ -6,7 +6,7 @@
     "dev": "nodemon",
     "start": "ts-node src/index.ts",
     "build": "tsc",
-    "serve": "node dist/server.js",
+    "serve": "node dist/index.js",
     "test": "jest --detectOpenHandles --forceExit --coverage"
   },
   "author": "",
