@@ -1,14 +1,16 @@
 import { Request, Response } from 'express';
 import { IUser, User } from '../models/user.model';
 import { compare, genSalt, hash } from 'bcryptjs';
-import { Secret, sign, verify } from 'jsonwebtoken';
+import { Secret, verify } from 'jsonwebtoken';
 import {
   extractTokenFromRequest,
   logEndFunction,
   logError,
   logStartFunction,
+  signTokens,
 } from '../utils/utils';
 import { StatusCodes } from 'http-status-codes';
+import { OAuth2Client } from 'google-auth-library';
 
 export const register = async (req: Request, res: Response) => {
   logStartFunction('register');
@@ -234,19 +236,55 @@ export const verifyUser = async (req: Request, res: Response) => {
   }
 };
 
-const signTokens = (
-  userId: string,
-): { accessToken: string; refreshToken: string } => {
-  const accessToken = sign(
-    { id: userId },
-    process.env.ACCESS_TOKEN_SECRET as Secret,
-    { expiresIn: process.env.JWT_TOKEN_EXPIRATION },
-  );
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-  const refreshToken = sign(
-    { id: userId },
-    process.env.REFRESH_TOKEN_SECRET as Secret,
-  );
+export const loginWithGoogle = async (req: Request, res: Response) => {
+  logStartFunction('loginWithGoogle');
+  const { token } = req.body;
 
-  return { accessToken, refreshToken };
+  if (!token) {
+    logError('Missing credential', 'googleSignIn');
+    res.status(StatusCodes.BAD_REQUEST).json({ error: 'Missing credential' });
+    return;
+  }
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      throw new Error('Invalid Google token payload');
+    }
+
+    const { email, name } = payload;
+
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = new User({
+        email,
+        username: email.split('@')[0],
+        fullName: name || 'Google User',
+        password: null,
+        tokens: [],
+      });
+      await user.save();
+    }
+
+    const { accessToken, refreshToken } = signTokens(user.id);
+
+    const MAX_TOKENS = 5;
+    user.tokens = [...(user.tokens || []), refreshToken].slice(-MAX_TOKENS);
+    await user.save();
+
+    logEndFunction('loginWithGoogle');
+    res.json({ accessToken, refreshToken });
+  } catch (error: any) {
+    logError(error.message, 'loginWithGoogle');
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
+  }
 };
