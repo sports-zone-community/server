@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div>
+        <button onclick="joinRoom()">Join Room</button>
+        <button onclick="sendPrivateMessage()">Send Private Message</button>
+        <button onclick="joinGroup()">Join Group</button>
+        <button onclick="sendGroupMessage()">Send Group Message</button>
+    </div>
+    <div id="messages"></div>
+
+    <script>
+        const socket = io('http://localhost:3000', {
+            auth: {
+                token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ODgyOGNjYjFhZmRhM2Y5OGE3NDM3NiIsImlhdCI6MTczNjk3ODY1OCwiZXhwIjoxNzM2OTgyMjU4fQ.v0lTFgtcBsx1vrzMBcLK-77ERzlXPnM0DXQq1zc-oLk'
+            },
+            withCredentials: false
+        });
+
+        const userId = '678828ccb1afda3f98a74376'; // שים את ה-ID של המשתמש שלך
+        const otherUserId = '67882ae2b1afda3f98a7437c'; // שים את ה-ID של המשתמש השני
+        const groupId = '67895d803d522bda4b52ad0a'; // שים את ה-ID של הקבוצה
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            socket.emit('user:connect', userId);
+            addMessage('Connected to server');
+        });
+
+        socket.on('user:connected', (response) => {
+            if (response.success) {
+                console.log('Successfully connected to chat');
+            } else {
+                console.error('Failed to connect:', response.error);
+            }
+        });
+
+        socket.on('new message', (data) => {
+            console.log('New message received:', data);
+            addMessage(`New message in chat ${data.chatId}: ${data.message.content}`);
+        });
+
+        socket.on('unread message', (data) => {
+            console.log('Unread message notification:', data);
+            addMessage(`Unread message from ${data.senderName}`);
+        });
+
+        function joinRoom() {
+            socket.emit('join', userId);
+            addMessage(`Joined room for user ${userId}`);
+        }
+
+        function sendPrivateMessage() {
+            socket.emit('private message', {
+                content: 'Hello! This is a test message',
+                to: otherUserId,
+                from: userId,
+                senderName: 'Test User'
+            });
+            addMessage('Private message sent');
+        }
+
+        function joinGroup() {
+            socket.emit('joinGroup', groupId);
+            addMessage(`Joined group ${groupId}`);
+        }
+
+        function sendGroupMessage() {
+            socket.emit('group message', {
+                content: 'Hello group! This is a test message',
+                groupId: groupId,
+                from: userId,
+                senderName: 'Test User'
+            });
+            addMessage('Group message sent');
+        }
+
+        function addMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML += `<p>${message}</p>`;
+        }
+    </script>
+</body>
+</html>

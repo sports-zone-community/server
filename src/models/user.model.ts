@@ -6,6 +6,7 @@ export interface IUser extends Document {
   email: string;
   fullName: string;
   tokens: string[];
+  groups: Schema.Types.ObjectId[];
 }
 
 const userSchema = new Schema<IUser>({
@@ -28,6 +29,10 @@ const userSchema = new Schema<IUser>({
   tokens: {
     type: [String],
   },
+  groups: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Group'
+  }]
 });
 
 export const User = model<IUser>('User', userSchema);
