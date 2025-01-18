@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { User } from '../../models/user.model';
-import { verifyUser } from '../../controllers/auth';
+import { User } from '../../models';
+import { verifyUser } from '../../controllers/auth.controller';
 
 jest.mock('../../models/user.model');
 
