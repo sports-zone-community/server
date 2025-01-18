@@ -1,12 +1,12 @@
 import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import authRoutes from './routes/auth.router';
+import { authRouter } from './routes/auth.router';
 import cors from 'cors';
 
 dotenv.config();
 
-const app: Application = express();
+export const app: Application = express();
 
 const corsOptions = {
   origin: 'http://localhost:5173',
@@ -19,6 +19,4 @@ app.options('*', cors(corsOptions));
 
 app.use(bodyParser.json());
 
-app.use('/auth', authRoutes);
-
-export default app;
+app.use('/auth', authRouter);
