@@ -11,18 +11,12 @@ declare global {
   }
 }
 
-export const authMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
+export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   try {
     const token = extractTokenFromRequest(req);
 
     if (!token) {
-      res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ error: 'Access denied. No token provided.' });
+      res.status(StatusCodes.UNAUTHORIZED).json({ error: 'Access denied. No token provided.' });
       return;
     }
 

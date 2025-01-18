@@ -1,7 +1,7 @@
 import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes';
+import authRoutes from './routes/auth.router';
 import cors from 'cors';
 
 dotenv.config();
