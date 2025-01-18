@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { User } from '../../models';
+import { UserModel } from '../../models';
 import { verifyUser } from '../../controllers/auth.controller';
 
 jest.mock('../../models/user.model');
@@ -28,22 +28,22 @@ describe('AUTH ROUTES - POST /auth/verify', () => {
     };
 
     const selectMock = jest.fn().mockResolvedValue(mockUser);
-    (User.findById as jest.Mock).mockReturnValue({ select: selectMock });
+    (UserModel.findById as jest.Mock).mockReturnValue({ select: selectMock });
 
     await verifyUser(req as Request, res as Response);
 
-    expect(User.findById).toHaveBeenCalledWith('validUserId');
+    expect(UserModel.findById).toHaveBeenCalledWith('validUserId');
     expect(selectMock).toHaveBeenCalledWith('-password -tokens');
     expect(res.json).toHaveBeenCalledWith({ user: mockUser });
   });
 
   it('should return 401 if user is not found', async () => {
     const selectMock = jest.fn().mockResolvedValue(null);
-    (User.findById as jest.Mock).mockReturnValue({ select: selectMock });
+    (UserModel.findById as jest.Mock).mockReturnValue({ select: selectMock });
 
     await verifyUser(req as Request, res as Response);
 
-    expect(User.findById).toHaveBeenCalledWith('validUserId');
+    expect(UserModel.findById).toHaveBeenCalledWith('validUserId');
     expect(selectMock).toHaveBeenCalledWith('-password -tokens');
     expect(res.status).toHaveBeenCalledWith(StatusCodes.UNAUTHORIZED);
     expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
@@ -51,13 +51,13 @@ describe('AUTH ROUTES - POST /auth/verify', () => {
 
   it('should handle errors and return 500 with error message', async () => {
     const errorMessage = 'Database error';
-    (User.findById as jest.Mock).mockImplementation(() => {
+    (UserModel.findById as jest.Mock).mockImplementation(() => {
       throw new Error(errorMessage);
     });
 
     await verifyUser(req as Request, res as Response);
 
-    expect(User.findById).toHaveBeenCalledWith('validUserId');
+    expect(UserModel.findById).toHaveBeenCalledWith('validUserId');
     expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
   });

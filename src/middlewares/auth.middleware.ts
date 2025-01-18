@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { Secret, verify } from 'jsonwebtoken';
-import { extractTokenFromRequest } from '../utils/utils';
+import { extractTokenFromRequest } from '../utils';
 import { StatusCodes } from 'http-status-codes';
 
 declare global {

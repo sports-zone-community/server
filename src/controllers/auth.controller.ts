@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { IUser, User } from '../models';
+import { IUser, UserModel } from '../models';
 import { compare, genSalt, hash } from 'bcryptjs';
 import { Secret, verify } from 'jsonwebtoken';
 import {
@@ -8,7 +8,7 @@ import {
   logError,
   logStartFunction,
   signTokens,
-} from '../utils/utils';
+} from '../utils';
 import { StatusCodes } from 'http-status-codes';
 import { OAuth2Client } from 'google-auth-library';
 
@@ -23,7 +23,7 @@ export const register = async (req: Request, res: Response) => {
   }
 
   try {
-    const user = await User.findOne({
+    const user: IUser | null = await UserModel.findOne({
       $or: [{ email }, { username }],
     });
 
@@ -35,7 +35,7 @@ export const register = async (req: Request, res: Response) => {
 
     const salt: string = await genSalt(10);
     const encryptedPassword = await hash(password, salt);
-    const newUser: IUser = new User({
+    const newUser: IUser = new UserModel({
       email,
       password: encryptedPassword,
       username,
@@ -62,7 +62,7 @@ export const login = async (req: Request, res: Response) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user: IUser | null = await UserModel.findOne({ email });
     if (!user) {
       logError('User does not exist', 'login');
       res.status(StatusCodes.UNAUTHORIZED).json({ error: 'User does not exist' });
@@ -106,7 +106,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const userId = userInfo.id;
 
     try {
-      const user = await User.findById(userId);
+      const user: IUser | null = await UserModel.findById(userId);
       if (!user) {
         logError('User not found', 'refreshToken');
         return res.status(StatusCodes.UNAUTHORIZED).json({ error: 'user not found' });
@@ -151,7 +151,7 @@ export const logout = async (req: Request, res: Response) => {
     const userId = userInfo.id;
 
     try {
-      const user = await User.findById(userId);
+      const user: IUser | null = await UserModel.findById(userId);
       if (!user) {
         logError('User not found', 'logout');
         return res.status(StatusCodes.UNAUTHORIZED).json({ error: 'user not found' });
@@ -179,7 +179,7 @@ export const logout = async (req: Request, res: Response) => {
 export const verifyUser = async (req: Request, res: Response) => {
   logStartFunction('verifyUser');
   try {
-    const user = await User.findById(req?.user?.id).select('-password -tokens');
+    const user: IUser = await UserModel.findById(req?.user?.id).select('-password -tokens');
     if (!user) {
       logError('User not found', 'verifyUser');
       res.status(StatusCodes.UNAUTHORIZED).json({ error: 'User not found' });
@@ -219,9 +219,9 @@ export const loginWithGoogle = async (req: Request, res: Response) => {
 
     const { email, name } = payload;
 
-    let user = await User.findOne({ email });
+    let user = await UserModel.findOne({ email });
     if (!user) {
-      user = new User({
+      user = new UserModel({
         email,
         username: email.split('@')[0],
         fullName: name || 'Google User',

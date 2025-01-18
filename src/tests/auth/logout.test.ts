@@ -1,13 +1,13 @@
-import { User } from '../../models/user.model';
+import { UserModel } from '../../models';
 import { sign } from 'jsonwebtoken';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
-import app from '../../app';
+import { app } from '../../app';
 
 describe('AUTH ROUTES - POST /auth/logout', () => {
   it('should log out a user with a valid token', async () => {
-    const user = await User.create({
+    const user = await UserModel.create({
       email: 'test@example.com',
       password: 'hashedpassword',
       username: 'testuser',
@@ -15,10 +15,7 @@ describe('AUTH ROUTES - POST /auth/logout', () => {
       tokens: [],
     });
 
-    const refreshToken = sign(
-      { id: user.id },
-      process.env.REFRESH_TOKEN_SECRET!,
-    );
+    const refreshToken = sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET!);
     user.tokens.push(refreshToken);
     await user.save();
 
@@ -49,10 +46,7 @@ describe('AUTH ROUTES - POST /auth/logout', () => {
   it('should return an error for user not found', async () => {
     const fakeUserId = new mongoose.Types.ObjectId();
 
-    const refreshToken = sign(
-      { id: fakeUserId },
-      process.env.REFRESH_TOKEN_SECRET!,
-    );
+    const refreshToken = sign({ id: fakeUserId }, process.env.REFRESH_TOKEN_SECRET!);
 
     const response = await supertest(app)
       .post('/auth/logout')
@@ -64,7 +58,7 @@ describe('AUTH ROUTES - POST /auth/logout', () => {
 
   it('should return an error for token not found', async () => {
     const fakeUserId = new mongoose.Types.ObjectId();
-    const user = new User({
+    const user = new UserModel({
       _id: fakeUserId,
       email: 'test@example.com',
       password: 'hashedpassword',
@@ -75,10 +69,7 @@ describe('AUTH ROUTES - POST /auth/logout', () => {
 
     await user.save();
 
-    const refreshToken = sign(
-      { id: fakeUserId.toString() },
-      process.env.REFRESH_TOKEN_SECRET!,
-    );
+    const refreshToken = sign({ id: fakeUserId.toString() }, process.env.REFRESH_TOKEN_SECRET!);
 
     const response = await supertest(app)
       .post('/auth/logout')
@@ -89,7 +80,7 @@ describe('AUTH ROUTES - POST /auth/logout', () => {
   });
 
   it('should return 500 Internal Server Error on failure', async () => {
-    const user = await User.create({
+    const user = await UserModel.create({
       email: 'test@example.com',
       password: 'hashedpassword',
       username: 'testuser',
@@ -97,16 +88,11 @@ describe('AUTH ROUTES - POST /auth/logout', () => {
       tokens: [],
     });
 
-    const refreshToken = sign(
-      { id: user.id },
-      process.env.REFRESH_TOKEN_SECRET!,
-    );
+    const refreshToken = sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET!);
     user.tokens.push(refreshToken);
     await user.save();
 
-    jest
-      .spyOn(User, 'findById')
-      .mockRejectedValue(new Error('Internal Server Error'));
+    jest.spyOn(UserModel, 'findById').mockRejectedValue(new Error('Internal Server Error'));
 
     const response = await supertest(app)
       .post('/auth/logout')
