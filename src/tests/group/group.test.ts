@@ -5,25 +5,7 @@ import app from '../../app';
 import { Group } from '../../models/group.model';
 import { User } from '../../models/user.model';
 import { Chat } from '../../models/chat.model';
-
-const createUser = async () => {
-  const mockUserRequest = {
-    email: 'test@example.com',
-    password: 'password123',
-    username: 'testuser',
-    fullName: 'Test User',
-  };
-  await supertest(app).post('/auth/register').send(mockUserRequest);
-  const loginResponse = await supertest(app).post('/auth/login').send({
-    email: 'test@example.com',
-    password: 'password123',
-  });
-  const user = await User.findOne({ email: 'test@example.com' });
-  return {
-    token: loginResponse.body.accessToken,
-    userId: user?._id as string
-  };
-}
+import { createUser } from '../../utils/functions/testFunctions/testFunctions';
 
 describe('GROUP ROUTES', () => {
   let token: string;
@@ -187,6 +169,20 @@ describe('GROUP ROUTES', () => {
 
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(response.body.error).toBe('Database error');
+    });
+
+
+    it('should return 404 when group is not found', async () => {
+
+      jest.spyOn(Group, 'findByIdAndUpdate').mockResolvedValue(null);
+
+      const response = await supertest(app)
+        .post(`/groups/${mockGroup._id}/join`)
+        .send()
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.NOT_FOUND);
+      expect(response.body.error).toBe('Group not found');
     });
 
     it('should return 401 when not authenticated', async () => {

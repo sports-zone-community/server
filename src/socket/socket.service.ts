@@ -1,10 +1,9 @@
 import { Server, Socket } from 'socket.io';
-import { Chat, IChat, IMessage } from '../models/chat.model';
+import { Chat, IChat } from '../models/chat.model';
 import { Types } from 'mongoose';
 import { User } from '../models/user.model';
-
+import { IMessage } from '../models/message.model';
 export class SocketService {
-  private io: Server;
   private activeChats: Map<string, Set<string>> = new Map();
   
   private static readonly TIME_FORMAT_OPTIONS = {
@@ -14,8 +13,7 @@ export class SocketService {
   
   private static readonly LOCALE = 'he-IL';
 
-  constructor(io: Server) {
-    this.io = io;
+  constructor(private io: Server) {
     this.setupSocketHandlers();
   }
 
@@ -28,10 +26,11 @@ export class SocketService {
       this.handleGroupMessage(socket);
       this.handleChatActivity(socket);
       this.handleDisconnect(socket);
+      this.handleJoinGroup(socket);
     });
   }
 
-  private async handleUserConnection(socket: Socket) {
+  private handleUserConnection(socket: Socket) {
     socket.on('user:connect', async (userId: string) => {
       try {
         console.log(`Attempting to connect user: ${userId}`);
@@ -81,7 +80,7 @@ export class SocketService {
       const { content, to, from, senderName } = data;
       
       try {
-        let chat = await Chat.findOne({
+        let chat: IChat | null = await Chat.findOne({
           participants: { $all: [from, to] },
           isGroupChat: false
         }) as IChat;
@@ -94,7 +93,7 @@ export class SocketService {
           });
         }
 
-        const chatId = chat._id.toString();
+        const chatId = chat._id as string;
         const isRecipientActive = this.activeChats.get(chatId)?.has(to);
         
         const read = [new Types.ObjectId(from)];
@@ -141,15 +140,15 @@ export class SocketService {
       const { content, groupId, from, senderName } = data;
 
       try {
-        const chat = await Chat.findOne({ groupId, isGroupChat: true }) as IChat;
+        const chat: IChat | null = await Chat.findOne({ groupId, isGroupChat: true }) as IChat;
         if (!chat) return;
 
-        const chatId = chat._id.toString();
+        const chatId = chat._id as string;
         const activeUsers = this.activeChats.get(chatId) || new Set();
         
         const read = [new Types.ObjectId(from)];
         
-        chat.participants.forEach(participantId => {
+        chat.participants.forEach((participantId: Types.ObjectId) => {
           const participantStringId = participantId.toString();
           if (activeUsers.has(participantStringId) && participantStringId !== from) {
             read.push(participantId);
@@ -248,6 +247,32 @@ export class SocketService {
       }
       
       console.log(`User ${userId} left chat ${chatId}`);
+    });
+  }
+
+  private handleJoinGroup(socket: Socket) {
+    socket.on('joinGroup', async (groupId: string) => {
+      try {
+        const { userId } = socket.data;
+        const groupRoom = `group:${groupId}`;
+        socket.join(groupRoom);
+        console.log(`User ${userId} joined group ${groupId}`);
+        
+        const groupChat = await Chat.findOne({ groupId, isGroupChat: true });
+        if (groupChat) {
+          socket.emit('group:joined', {
+            success: true,
+            groupId,
+            chatId: groupChat._id
+          });
+        }
+      } catch (error) {
+        console.error('Error joining group:', error);
+        socket.emit('group:joined', {
+          success: false,
+          error: 'Failed to join group'
+        });
+      }
     });
   }
 } 

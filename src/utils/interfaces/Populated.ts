@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { IChat } from '../../models/chat.model';
 
 export interface PopulatedUser {
     _id: Types.ObjectId;
@@ -10,20 +11,19 @@ export interface PopulatedGroup {
     _id: Types.ObjectId;
     name: string;
 } 
-
-export interface PopulatedChat {
-    _id: Types.ObjectId;
-    participants: PopulatedUser[];
-    isGroupChat: boolean;
-    groupId?: PopulatedGroup;
-    messages: PopulatedMessage[];
-    lastMessage?: PopulatedMessage;
-}
   
 export interface PopulatedMessage {
+    _id: Types.ObjectId;
     sender: PopulatedUser;
     content: string;
     timestamp: Date;
     read: Types.ObjectId[];
  }
+
+ export interface PopulatedChat extends Omit<IChat, 'participants' | 'groupId' | 'messages' | 'lastMessage'> {
+    participants: PopulatedUser[];
+    groupId: PopulatedGroup;
+    messages: PopulatedMessage[];
+    lastMessage?: PopulatedMessage;
+  }
   

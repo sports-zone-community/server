@@ -38,7 +38,7 @@ const groupSchema = new Schema<IGroup>({
     type: String
   }
 }, {
-  timestamps: true  // מוסיף אוטומטית createdAt ו-updatedAt
+  timestamps: true
 });
 
 groupSchema.pre('save', function(next) {

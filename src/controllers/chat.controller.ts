@@ -1,24 +1,21 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { PopulatedGroup, PopulatedUser } from '../utils/interfaces/Populated';
-import { logStartFunction, logEndFunction, logError } from '../utils/utils';
-import { chatValidators } from '../validator/chat.validator';
-import { getUnreadChats, processChatsData, sortMessages } from '../utils/functions/chatFunctions';
-import { fetchUserChats, markMessagesAsReaded, getUnreadMsg, getChatsById } from '../repository/chatRepo';
+import { Types, UpdateResult } from 'mongoose';
 
+import { PopulatedChat } from '../utils/interfaces/Populated';
+import { logStartFunction, logEndFunction, logError } from '../utils/utils';
+import { formatChat, getUnreadChats, processChatsData, sortMessages } from '../utils/functions/chatFunctions';
+import { fetchUserChats, markMessagesAsReaded, getUnreadMsg, getChatById } from '../repository/chat.repository';
+import { getChatMessagesSchema } from '../validations/chat.validation';
+import { Chat, Message } from '../utils/interfaces/chat';
 
 export const getUserChats = async (req: Request, res: Response) => {
   logStartFunction('getUserChats');
   const userId = req.user?.id;
 
   try {
-    const chats = await fetchUserChats(userId!);
-    const processedChats = processChatsData(chats, userId!);
-
-    if (processedChats.length === 0) {
-       res.status(StatusCodes.NOT_FOUND).json({ error: 'No chats found for the user' });
-       return;
-    }
+    const chats: PopulatedChat[] = await fetchUserChats(new Types.ObjectId(userId));
+    const processedChats: Chat[] = processChatsData(chats, userId!);
 
     logEndFunction('getUserChats');
     res.status(StatusCodes.OK).json(processedChats);
@@ -30,23 +27,21 @@ export const getUserChats = async (req: Request, res: Response) => {
   }
 };
 
-
 export const markMessagesAsRead = async (req: Request, res: Response) => {
-  logStartFunction('markMessagesAsRead');
   const { chatId } = req.params;
   const userId = req.user?.id;
+  logStartFunction('markMessagesAsRead');
 
-  const { error } = chatValidators.markMessagesAsReadSchema.validate({ chatId, userId });
+  const { error } = getChatMessagesSchema.validate({ chatId });
   if (error) {
      res.status(StatusCodes.BAD_REQUEST).json({ error: error.details[0].message });
      return;
   }
 
   try {
-    await markMessagesAsReaded(chatId, userId!);
-
+    const result: UpdateResult = await markMessagesAsReaded(new Types.ObjectId(chatId), new Types.ObjectId(userId));
     logEndFunction('markMessagesAsRead');
-    res.status(StatusCodes.OK).json({ success: true });
+    res.status(StatusCodes.OK).json({ success: true, result });
   } catch (error: any) {
     logError(error.message, 'markMessagesAsRead');
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
@@ -56,11 +51,11 @@ export const markMessagesAsRead = async (req: Request, res: Response) => {
 
 export const getUnreadMessages = async (req: Request, res: Response) => {
   logStartFunction('getUnreadMessages');
-  const userId = req.user?.id;
+  const userId: string | undefined = req.user?.id;
 
   try {
-    const chatsWithUnread = await getUnreadMsg(userId!);
-    const unreadMessages = getUnreadChats(chatsWithUnread, userId!);
+    const chatsWithUnread: PopulatedChat[] = await getUnreadMsg(new Types.ObjectId(userId));
+    const unreadMessages: Chat[] = getUnreadChats(chatsWithUnread, userId!);
 
     logEndFunction('getUnreadMessages');
     res.status(StatusCodes.OK).json(unreadMessages);
@@ -71,40 +66,28 @@ export const getUnreadMessages = async (req: Request, res: Response) => {
 };
 
 export const getChatMessages = async (req: Request, res: Response) => {
-  logStartFunction('getChatMessages');
   const { chatId } = req.params;
   const userId = req.user?.id;
+  logStartFunction('getChatMessages');
 
-  const { error } = chatValidators.getChatMessagesSchema.validate({ chatId });
+  const { error } = getChatMessagesSchema.validate({ chatId });
   if (error) {
      res.status(StatusCodes.BAD_REQUEST).json({ error: error.details[0].message });
      return;
   }
 
   try {
-    const chat = await getChatsById(chatId);
+    const chat: PopulatedChat | null = await getChatById(new Types.ObjectId(chatId));
     if (!chat) {
       res.status(StatusCodes.NOT_FOUND).json({ error: 'Chat not found' });
       return;
     }
 
-    const sortedMessages = sortMessages(chat.messages, userId!);
+    const sortedMessages: Message[] = sortMessages(chat.messages, userId!);
 
-    const chatData = {
-      chatId: chat._id,
-      isGroupChat: chat.isGroupChat,
-      chatName: chat.isGroupChat 
-        ? (chat.groupId as unknown as PopulatedGroup)?.name 
-        : (chat.participants.find(p => p._id.toString() !== userId) as unknown as PopulatedUser)?.fullName,
-      participants: chat.participants.map(p => ({
-        id: p._id,
-        name: (p as unknown as PopulatedUser).fullName,
-        username: (p as unknown as PopulatedUser).username
-      })),
-      messages: sortedMessages
-    };
+    const chatData: Chat = formatChat(chat, new Types.ObjectId(userId), sortedMessages)
 
-    await markMessagesAsReaded(chatId, userId!);
+    await markMessagesAsReaded(new Types.ObjectId(chatId), new Types.ObjectId(userId));
 
     logEndFunction('getChatMessages');
     res.status(StatusCodes.OK).json(chatData);

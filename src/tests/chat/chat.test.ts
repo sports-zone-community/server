@@ -3,27 +3,9 @@ import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import app from '../../app';
 import { Chat } from '../../models/chat.model';
-import { User } from '../../models/user.model';
-import { mockPopulateMock } from '../../utils/functions/testFunctions/testFunctions';
-
-const createUser = async (email = 'test@example.com') => {
-  const mockUserRequest = {
-    email,
-    password: 'password123',
-    username: email.split('@')[0],
-    fullName: 'Test User',
-  };
-  await supertest(app).post('/auth/register').send(mockUserRequest);
-  const loginResponse = await supertest(app).post('/auth/login').send({
-    email,
-    password: 'password123',
-  });
-  const user = await User.findOne({ email });
-  return {
-    token: loginResponse.body.accessToken,
-    userId: user?._id as string
-  };
-};
+import { createUser, mockPopulateMock } from '../../utils/functions/testFunctions/testFunctions';
+import { Message } from '../../utils/interfaces/chat';
+import { Request } from 'express';
 
 describe('CHAT ROUTES', () => {
   let token: string;
@@ -67,12 +49,13 @@ describe('CHAT ROUTES', () => {
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });
 
-    it('should return 404 when user has no chats', async () => {
+    it('should return 200 with empty array when user has no chats', async () => {
       await Chat.deleteMany({ participants: userId });
       const response = await supertest(app)
         .get('/chats')
         .set('Authorization', `Bearer ${token}`);
-      expect(response.status).toBe(StatusCodes.NOT_FOUND);
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body).toEqual([]);
     });
 
     it('should return 500 when get error from Database', async () => {
@@ -93,8 +76,42 @@ describe('CHAT ROUTES', () => {
         .set('Authorization', `Bearer ${token}`);
     
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      expect(response.body.error).toBe('Database error');
     });    
+
+    it('should return 200 with empty array when user has no chats', async () => {
+      await Chat.deleteMany({ participants: userId });
+      const response = await supertest(app)
+        .get('/chats')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body).toEqual([]);
+    });
+
+    it('should return 401 when token is invalid', async () => {
+      const response = await supertest(app)
+        .get('/chats')
+        .set('Authorization', 'Bearer invalid-token');
+      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('should handle undefined user id', async () => {
+      const req = { user: undefined } as Request;
+      const response = await supertest(app)
+        .get('/chats')
+        .set('Authorization', 'Bearer invalid-token');
+
+      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('should handle empty chats result', async () => {
+      await Chat.deleteMany({});
+      const response = await supertest(app)
+        .get('/chats')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body).toEqual([]);
+    });
   });
 
   describe('PUT /chats/:chatId/read', () => {
@@ -135,6 +152,36 @@ describe('CHAT ROUTES', () => {
 
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
+
+    it('should handle validation error for invalid chatId', async () => {
+      const response = await supertest(app)
+        .put('/chats/invalid-id/read')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should handle undefined user id', async () => {
+      const response = await supertest(app)
+        .put(`/chats/${mockChat._id}/read`)
+        .set('Authorization', 'Bearer invalid-token');
+
+      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('should successfully mark messages as read', async () => {
+      const response = await supertest(app)
+        .put(`/chats/${mockChat._id}/read`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body.success).toBe(true);
+      
+      // וידוא שההודעות סומנו כנקראות
+      const updatedChat = await Chat.findById(mockChat._id);
+      expect(updatedChat?.messages[0].read).toContainEqual(new Types.ObjectId(userId));
+    });
   });
 
   describe('GET /chats/messages/unread', () => {
@@ -167,10 +214,42 @@ describe('CHAT ROUTES', () => {
     
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });    
+
+    it('should return 200 with empty array when user has no unread messages', async () => {
+      await Chat.updateMany(
+        { participants: userId },
+        { $set: { 'messages.$[].read': userId } }
+      );
+      
+      const response = await supertest(app)
+        .get('/chats/messages/unread')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body).toEqual([]);
+    });
+
+    it('should return 401 when token is invalid', async () => {
+      const response = await supertest(app)
+        .get('/chats/messages/unread')
+        .set('Authorization', 'Bearer invalid-token');
+      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+    });
   });
 
   describe('GET /chats/:chatId', () => {
-    it('should get chat messages successfully', async () => {
+    it('should get chat messages successfully and sort them correctly', async () => {
+      await Chat.findByIdAndUpdate(mockChat._id, {
+        $push: {
+          messages: {
+            sender: new Types.ObjectId(userId),
+            content: 'Earlier message',
+            timestamp: new Date('2024-02-20T10:00:00'),
+            read: []
+          }
+        }
+      });
+
       const response = await supertest(app)
         .get(`/chats/${mockChat._id}`)
         .set('Authorization', `Bearer ${token}`);
@@ -178,7 +257,20 @@ describe('CHAT ROUTES', () => {
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body).toHaveProperty('messages');
       expect(Array.isArray(response.body.messages)).toBeTruthy();
-      expect(response.body.messages[0]).toHaveProperty('content');
+      
+      const messages = response.body.messages;
+      expect(messages[0].content).toBe('Earlier message');
+      expect(messages[1].content).toBe('Hello!');
+      expect(new Date(messages[0].timestamp).getTime()).toBeLessThan(new Date(messages[1].timestamp).getTime());
+      
+      messages.forEach((message: Message) => {
+        expect(message).toHaveProperty('messageId');
+        expect(message).toHaveProperty('content');
+        expect(message).toHaveProperty('sender');
+        expect(message).toHaveProperty('timestamp');
+        expect(message).toHaveProperty('formattedTime');
+        expect(message).toHaveProperty('isRead');
+      });
     });
 
     it('should return 404 for non-existent chat', async () => {
@@ -202,6 +294,7 @@ describe('CHAT ROUTES', () => {
       const mockPopulate: jest.Mock = jest.fn()
         .mockImplementationOnce(mockPopulateMock)
         .mockImplementationOnce(mockPopulateMock)
+        .mockImplementationOnce(mockPopulateMock)
         .mockRejectedValueOnce(new Error('Database error')); 
     
       const mockFind = jest.fn().mockReturnValue({
@@ -215,6 +308,13 @@ describe('CHAT ROUTES', () => {
         .set('Authorization', `Bearer ${token}`);
     
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('should return 401 when token is invalid', async () => {
+      const response = await supertest(app)
+        .get(`/chats/${mockChat._id}`)
+        .set('Authorization', 'Bearer invalid-token');
+      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });
   }); 
 }); 

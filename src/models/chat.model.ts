@@ -1,17 +1,8 @@
 import { Document, model, Schema, Types  } from 'mongoose';
+import { IMessage } from './message.model';
 
-export interface IMessage {
-  _id: Types.ObjectId;
-  sender: Types.ObjectId;
-  content: string;
-  timestamp: Date;
-  read: Types.ObjectId[];
-  senderName?: string;
-  formattedTime?: string;
-}
 
 export interface IChat extends Document {
-  _id: Types.ObjectId;
   participants: Types.ObjectId[];
   isGroupChat: boolean;
   groupId?: Types.ObjectId;
@@ -21,46 +12,57 @@ export interface IChat extends Document {
   chatName?: string;
 }
 
-const messageSchema = new Schema<IMessage>({
-  sender: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  senderName: {
-    type: String
-  },
-  content: {
-    type: String,
-    required: true
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now
-  },
-  read: {
-    type: [Schema.Types.ObjectId],
-    default: []
-  }
-});
+  const messageSchema = new Schema<IMessage>({
+    sender: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    senderName: {
+      type: String
+    },
+    content: {
+      type: String,
+      required: true
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    read: {
+      type: [Schema.Types.ObjectId],
+      default: []
+    }
+  });
 
 const chatSchema = new Schema<IChat>({
   participants: [{
     type: Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    required: true
   }],
   isGroupChat: {
     type: Boolean,
-    default: false
+    default: false,
+    required: true
   },
   groupId: {
     type: Schema.Types.ObjectId,
-    ref: 'Group'
+    ref: 'Group',
+    required: function(this: IChat) {
+      return this.isGroupChat;
+    }
   },
   groupName: {
-    type: String
+    type: String,
+    required: function(this: IChat) {
+      return this.isGroupChat;
+    }
   },
-  messages: [messageSchema],
+  messages: {
+    type: [messageSchema],
+    default: []
+  },
   lastMessage: messageSchema,
   chatName: {
     type: String
