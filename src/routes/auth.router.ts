@@ -6,7 +6,7 @@ export const authRouter: Router = Router();
 
 authRouter.post('/register', AuthController.register);
 authRouter.post('/login', AuthController.login);
-authRouter.post('/logout', AuthController.logout);
+authRouter.post('/logout', authMiddleware, AuthController.logout);
 authRouter.post('/refreshToken', AuthController.refreshToken);
 authRouter.get('/verify', authMiddleware, AuthController.verifyUser);
 authRouter.post('/google', AuthController.loginWithGoogle);

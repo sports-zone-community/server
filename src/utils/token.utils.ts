@@ -1,23 +1,39 @@
 import { Request } from 'express';
-import { Secret, sign } from 'jsonwebtoken';
+import { Secret, sign, verify } from 'jsonwebtoken';
+import { BadRequestError, UnauthorizedError } from './errors';
 
-export const extractTokenFromRequest = (req: Request): string | undefined => {
-  return req.header('Authorization')?.split(' ')[1];
+export interface TokenPayload {
+  userId: string;
+}
+
+export const getAuthHeader = (req: Request, functionName: string): string => {
+  const token: string | undefined = req.header('Authorization')?.split(' ')[1];
+  if (!token) {
+    throw new BadRequestError('No "Authorization" header provided', { functionName });
+  }
+
+  return token;
 };
 
-export const signTokens = (
-  userId: string,
-): { accessToken: string; refreshToken: string } => {
-  const accessToken = sign(
-    { id: userId },
+export const signTokens = (userId: string): { accessToken: string; refreshToken: string } => {
+  const accessToken: string = sign(
+    { userId: userId } as TokenPayload,
     process.env.ACCESS_TOKEN_SECRET as Secret,
     { expiresIn: process.env.JWT_TOKEN_EXPIRATION },
   );
 
   const refreshToken = sign(
-    { id: userId },
+    { userId: userId } as TokenPayload,
     process.env.REFRESH_TOKEN_SECRET as Secret,
   );
 
   return { accessToken, refreshToken };
+};
+
+export const verifyToken = (token: string, functionName: string): TokenPayload => {
+  try {
+    return verify(token, process.env.REFRESH_TOKEN_SECRET as Secret) as TokenPayload;
+  } catch (error: unknown) {
+    throw new UnauthorizedError('Invalid token', { functionName });
+  }
 };

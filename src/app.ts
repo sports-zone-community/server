@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import { authRouter } from './routes';
 import cors from 'cors';
+import { errorMiddleware } from './middlewares/error.middleware';
 
 dotenv.config();
 
@@ -20,3 +21,5 @@ app.options('*', cors(corsOptions));
 app.use(bodyParser.json());
 
 app.use('/auth', authRouter);
+
+app.use(errorMiddleware);
