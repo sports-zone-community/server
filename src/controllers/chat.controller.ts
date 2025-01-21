@@ -85,12 +85,10 @@ export const getChatMessages = async (req: Request, res: Response) => {
 
     const sortedMessages: Message[] = sortMessages(chat.messages, userId!);
 
-    const chatData: Chat = formatChat(chat, new Types.ObjectId(userId), sortedMessages)
-
     await markMessagesAsReaded(new Types.ObjectId(chatId), new Types.ObjectId(userId));
 
     logEndFunction('getChatMessages');
-    res.status(StatusCodes.OK).json(chatData);
+    res.status(StatusCodes.OK).json(sortedMessages);
   } catch (error: any) {
     logError(error.message, 'getChatMessages');
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });

@@ -3,8 +3,25 @@ import { Chat, IChat } from '../models/chat.model';
 import { Types } from 'mongoose';
 import { User } from '../models/user.model';
 import { IMessage } from '../models/message.model';
+import { verify } from 'jsonwebtoken';
+import { Secret } from 'jsonwebtoken';
 export class SocketService {
   private activeChats: Map<string, Set<string>> = new Map();
+  private authenticatedSockets: Map<string, string> = new Map();
+
+  private async authenticateToken(token: string): Promise<string> {
+    try {
+      if (!token) {
+        throw new Error('No token provided');
+      }
+
+      const secret: Secret = process.env.ACCESS_TOKEN_SECRET as Secret;
+      const decoded = verify(token, secret) as { id: string };
+      return decoded.id;
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
   
   private static readonly TIME_FORMAT_OPTIONS = {
     hour: '2-digit',
@@ -21,7 +38,9 @@ export class SocketService {
     this.io.on('connection', async (socket: Socket) => {
       console.log('Socket connected:', socket.id);
       
-      this.handleUserConnection(socket);
+      this.handleAuthentication(socket);
+
+      this.handlePrivateMessage(socket);
       this.handlePrivateMessage(socket);
       this.handleGroupMessage(socket);
       this.handleChatActivity(socket);
@@ -30,20 +49,29 @@ export class SocketService {
     });
   }
 
-  private handleUserConnection(socket: Socket) {
-    socket.on('user:connect', async (userId: string) => {
+  private handleAuthentication(socket: Socket) {
+    socket.on('authenticate', async ({ token }: { token: string }) => {
       try {
-        console.log(`Attempting to connect user: ${userId}`);
+        const userId = await this.authenticateToken(token);
+        this.authenticatedSockets.set(socket.id, userId);
         await this.joinUserRooms(socket, userId);
-        socket.emit('user:connected', { success: true });
+        socket.emit('authenticated', { success: true });
       } catch (error) {
-        console.error('Error in connection setup:', error);
-        socket.emit('user:connected', { 
+        console.error('Authentication error:', error);
+        socket.emit('authenticated', { 
           success: false, 
-          error: 'Failed to connect user' 
+          error: 'Authentication failed' 
         });
       }
     });
+  }
+
+  private getUserId(socket: Socket): string {
+    const userId = this.authenticatedSockets.get(socket.id);
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    return userId;
   }
 
   private async joinUserRooms(socket: Socket, userId: string) {
@@ -76,10 +104,10 @@ export class SocketService {
   }
 
   private handlePrivateMessage(socket: Socket) {
-    socket.on('private message', async (data) => {
-      const { content, to, from, senderName } = data;
-      
+    socket.on('private message', async ({ content, to, senderName }) => {
       try {
+        const from = this.getUserId(socket);
+        
         let chat: IChat | null = await Chat.findOne({
           participants: { $all: [from, to] },
           isGroupChat: false
@@ -131,17 +159,25 @@ export class SocketService {
         }
       } catch (error) {
         console.error('Error handling private message:', error);
+        socket.emit('error', { message: 'Authentication failed' });
       }
     });
   }
 
   private handleGroupMessage(socket: Socket) {
-    socket.on('group message', async (data) => {
-      const { content, groupId, from, senderName } = data;
-
+    socket.on('group message', async ({ content, groupId, senderName }) => {
       try {
-        const chat: IChat | null = await Chat.findOne({ groupId, isGroupChat: true }) as IChat;
-        if (!chat) return;
+        const from = this.getUserId(socket);
+        
+        const chat: IChat | null = await Chat.findOne({ 
+          groupId, 
+          isGroupChat: true,
+          participants: from
+        }) as IChat;
+        
+        if (!chat) {
+          throw new Error('Chat not found or user not authorized');
+        }
 
         const chatId = chat._id as string;
         const activeUsers = this.activeChats.get(chatId) || new Set();
@@ -195,46 +231,62 @@ export class SocketService {
 
       } catch (error) {
         console.error('Error handling group message:', error);
+        socket.emit('error', { message: 'Authentication failed' });
       }
     });
   }
 
   private handleDisconnect(socket: Socket) {
     socket.on('disconnect', () => {
+      this.authenticatedSockets.delete(socket.id);
       console.log('User disconnected:', socket.id);
     });
   }
 
   private handleChatActivity(socket: Socket) {
-    socket.on('enterChat', async (data: { userId: string, chatId: string }) => {
-      const { userId, chatId } = data;
-      
-      if (!this.activeChats.has(chatId)) {
-        this.activeChats.set(chatId, new Set());
-      }
-      this.activeChats.get(chatId)?.add(userId);
-      
-      console.log(`User ${userId} entered chat ${chatId}`);
-
+    socket.on('enterChat', async ({ chatId }) => {
       try {
-        await Chat.updateMany(
-          { _id: chatId },
-          {
-            $addToSet: {
-              'messages.$[elem].read': new Types.ObjectId(userId)
-            }
-          },
-          {
-            arrayFilters: [
-              { 
-                'elem.sender': { $ne: userId },
-                'elem.read': { $ne: new Types.ObjectId(userId) }
+        const userId = this.getUserId(socket);
+        
+        const chat = await Chat.findOne({
+          _id: chatId,
+          participants: userId
+        });
+        
+        if (!chat) {
+          throw new Error('Chat not found or user not authorized');
+        }
+
+        if (!this.activeChats.has(chatId)) {
+          this.activeChats.set(chatId, new Set());
+        }
+        this.activeChats.get(chatId)?.add(userId);
+        
+        console.log(`User ${userId} entered chat ${chatId}`);
+
+        try {
+          await Chat.updateMany(
+            { _id: chatId },
+            {
+              $addToSet: {
+                'messages.$[elem].read': new Types.ObjectId(userId)
               }
-            ]
-          }
-        );
+            },
+            {
+              arrayFilters: [
+                { 
+                  'elem.sender': { $ne: userId },
+                  'elem.read': { $ne: new Types.ObjectId(userId) }
+                }
+              ]
+            }
+          );
+        } catch (error) {
+          console.error('Error marking messages as read:', error);
+        }
       } catch (error) {
-        console.error('Error marking messages as read:', error);
+        console.error('Error in chat activity:', error);
+        socket.emit('error', { message: 'Authentication failed' });
       }
     });
 

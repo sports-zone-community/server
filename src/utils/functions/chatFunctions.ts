@@ -12,7 +12,9 @@ export const processChatsData = (chats: PopulatedChat[], userId: string): Chat[]
         chatId: chat._id as string,
         chatName: getChatName(chat, userId),
         lastMessage: formatLastMessage(lastMessage, userId),
-        unreadCount
+        unreadCount,
+        isGroupChat: chat.isGroupChat,
+        groupName: chat.isGroupChat ? (chat.groupId as PopulatedGroup)?.name : undefined
       };
     });
   };
@@ -38,8 +40,10 @@ export const processChatsData = (chats: PopulatedChat[], userId: string): Chat[]
 
 
   export const sortMessages = (messages: PopulatedMessage[], userId: string): Message[] => {
+    if (!messages || messages.length === 0) return [];
+    
     return messages
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
       .map((message: PopulatedMessage) => ({
         messageId: message._id.toString(),
         content: message.content,
