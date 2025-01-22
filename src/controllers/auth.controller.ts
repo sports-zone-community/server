@@ -1,17 +1,11 @@
 import { Request, Response } from 'express';
 import { IUser, UserModel } from '../models';
-import { compare, genSalt, hash } from 'bcryptjs';
-import {
-  getAuthHeader,
-  logEndFunction,
-  logStartFunction,
-  signTokens,
-  TokenPayload,
-  verifyToken,
-} from '../utils';
+import { genSalt, hash } from 'bcryptjs';
+import { logEndFunction, logStartFunction, signTokens, verifyPassword } from '../utils';
 import { OAuth2Client } from 'google-auth-library';
-import { BadRequestError, NotFoundError, UnauthorizedError } from '../utils/errors';
+import { BadRequestError, UnauthorizedError } from '../utils/errors';
 import { InternalServerError } from '../utils/errors/internal-server.error';
+import { createUser, getUserByFilters, getUserById, updateUser } from '../repositories';
 
 export const register = async (req: Request, res: Response) => {
   const functionName: string = register.name;
@@ -22,20 +16,15 @@ export const register = async (req: Request, res: Response) => {
     throw new BadRequestError('Please fill all fields', { functionName });
   }
 
+  const user: IUser | null = await UserModel.findOne({ $or: [{ email }, { username }] });
+  if (user) {
+    throw new BadRequestError('User already exists', { functionName });
+  }
+
   try {
-    const user: IUser | null = await UserModel.findOne({ $or: [{ email }, { username }] });
-    if (user) {
-      throw new BadRequestError('User already exists', { functionName });
-    }
     const salt: string = await genSalt(10);
     const encryptedPassword = await hash(password, salt);
-    const newUser: IUser = new UserModel({
-      email,
-      password: encryptedPassword,
-      username,
-      fullName,
-    });
-    await newUser.save();
+    await createUser({ email, password: encryptedPassword, username, fullName });
 
     logEndFunction(functionName);
     res.json({ message: 'User registered successfully' });
@@ -53,101 +42,62 @@ export const login = async (req: Request, res: Response) => {
     throw new BadRequestError('Please fill all fields', { functionName });
   }
 
-  try {
-    const user: IUser | null = await UserModel.findOne({ email });
-    if (!user) {
-      throw new UnauthorizedError('User does not exist', { functionName });
-    }
+  const user: IUser = await getUserByFilters({ email });
+  await verifyPassword(password, user.password);
 
-    const isMatch: boolean = await compare(password, user.password);
-    if (!isMatch) {
-      throw new UnauthorizedError('Invalid credentials', { functionName });
-    }
-
-    const { accessToken, refreshToken } = signTokens(user.id);
-    user.tokens = [...user.tokens, refreshToken];
-    await user.save();
-
-    logEndFunction(functionName);
-    res.json({ accessToken, refreshToken });
-  } catch (error: any) {
-    throw new InternalServerError(error.message, { functionName });
-  }
+  const { accessToken, refreshToken } = signTokens(user.id);
+  await updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
+  logEndFunction(functionName);
+  res.json({ accessToken, refreshToken });
 };
 
-export const refreshToken = async (req: Request, res: Response) => {
-  const functionName: string = refreshToken.name;
+export const refresh = async (req: Request, res: Response) => {
+  const functionName: string = refresh.name;
   logStartFunction(functionName);
 
-  const token: string = getAuthHeader(req, functionName);
-  const { userId }: TokenPayload = verifyToken(token, functionName);
+  const { id, token }: { id: string; token: string } = req.user;
 
-  try {
-    const user: IUser | null = await UserModel.findById(userId);
-    if (!user) {
-      throw new NotFoundError('User not found', { functionName });
-    }
-
-    if (!user.tokens.includes(token)) {
-      user.tokens = [];
-      await user.save();
-      throw new UnauthorizedError('Token not found', { functionName });
-    }
-
-    const { accessToken, refreshToken } = signTokens(userId);
-    user.tokens[user.tokens.indexOf(token)] = refreshToken;
-    await user.save();
-
-    logEndFunction(functionName);
-    res.send({ accessToken, refreshToken });
-  } catch (error: any) {
-    throw new InternalServerError(error.message, { functionName });
+  const user: IUser = await getUserById(id);
+  if (!user.tokens.includes(token)) {
+    await updateUser(id, { tokens: [] });
+    throw new UnauthorizedError('Token not found', { functionName });
   }
+
+  const { accessToken, refreshToken } = signTokens(id);
+  user.tokens[user.tokens.indexOf(token)] = refreshToken;
+  await updateUser(id, { tokens: [...user.tokens] });
+
+  logEndFunction(functionName);
+  res.send({ accessToken, refreshToken });
 };
 
 export const logout = async (req: Request, res: Response) => {
   const functionName: string = logout.name;
   logStartFunction(functionName);
 
-  const token: string = getAuthHeader(req, functionName);
-  const { userId }: TokenPayload = verifyToken(token, functionName);
+  const { id, token }: { id: string; token: string } = req.user;
 
-  try {
-    const user: IUser | null = await UserModel.findById(userId);
-    if (!user) {
-      throw new NotFoundError('User not found', { functionName });
-    }
-
-    if (!user.tokens.includes(token)) {
-      user.tokens = [];
-      await user.save();
-      throw new UnauthorizedError('Token not found', { functionName });
-    }
-
-    user.tokens.splice(user.tokens.indexOf(token), 1);
-    await user.save();
-
-    logEndFunction(functionName);
-    res.send('User logged out successfully');
-  } catch (error: any) {
-    throw new InternalServerError(error.message, { functionName });
+  const user: IUser = await getUserById(id);
+  if (!user.tokens.includes(token)) {
+    await updateUser(id, { tokens: [] });
+    throw new UnauthorizedError('Token not found', { functionName });
   }
+
+  user.tokens.splice(user.tokens.indexOf(token), 1);
+  await updateUser(id, { tokens: [...user.tokens] });
+
+  logEndFunction(functionName);
+  res.send('User logged out successfully');
 };
 
 export const verifyUser = async (req: Request, res: Response) => {
   const functionName: string = verifyUser.name;
   logStartFunction(functionName);
-  try {
-    const user: IUser = await UserModel.findById(req?.user?.id).select('-password -tokens');
-    if (!user) {
-      throw new NotFoundError('User not found', { functionName });
-    }
 
-    logEndFunction(functionName);
-    res.json({ user });
-  } catch (error: any) {
-    throw new InternalServerError(error.message, { functionName });
-  }
+  const user: IUser = await getUserById(req.user!.id);
+
+  logEndFunction(functionName);
+  res.json({ user });
 };
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);

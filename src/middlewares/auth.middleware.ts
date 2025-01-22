@@ -4,7 +4,7 @@ import { getAuthHeader, TokenPayload, verifyToken } from '../utils';
 declare global {
   namespace Express {
     interface Request {
-      user?: { id: string; token: string };
+      user: { id: string; token: string };
     }
   }
 }

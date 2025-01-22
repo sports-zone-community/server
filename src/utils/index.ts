@@ -1,2 +1,2 @@
 export * from './log.utils';
-export * from './token.utils';
+export * from './auth.utils';

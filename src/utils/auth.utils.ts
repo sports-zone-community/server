@@ -1,6 +1,7 @@
 import { Request } from 'express';
 import { Secret, sign, verify } from 'jsonwebtoken';
 import { BadRequestError, UnauthorizedError } from './errors';
+import { compare } from 'bcryptjs';
 
 export interface TokenPayload {
   userId: string;
@@ -17,15 +18,12 @@ export const getAuthHeader = (req: Request, functionName: string): string => {
 
 export const signTokens = (userId: string): { accessToken: string; refreshToken: string } => {
   const accessToken: string = sign(
-    { userId: userId } as TokenPayload,
+    { userId } as TokenPayload,
     process.env.ACCESS_TOKEN_SECRET as Secret,
     { expiresIn: process.env.JWT_TOKEN_EXPIRATION },
   );
 
-  const refreshToken = sign(
-    { userId: userId } as TokenPayload,
-    process.env.REFRESH_TOKEN_SECRET as Secret,
-  );
+  const refreshToken = sign({ userId } as TokenPayload, process.env.REFRESH_TOKEN_SECRET as Secret);
 
   return { accessToken, refreshToken };
 };
@@ -35,5 +33,12 @@ export const verifyToken = (token: string, functionName: string): TokenPayload =
     return verify(token, process.env.REFRESH_TOKEN_SECRET as Secret) as TokenPayload;
   } catch (error: unknown) {
     throw new UnauthorizedError('Invalid token', { functionName });
+  }
+};
+
+export const verifyPassword = async (password: string, hashedPassword: string) => {
+  const isMatch: boolean = await compare(password, hashedPassword);
+  if (!isMatch) {
+    throw new UnauthorizedError('Invalid credentials', { functionName: 'Change me' });
   }
 };
