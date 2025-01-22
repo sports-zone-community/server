@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { IUser, UserModel } from '../models';
 import { genSalt, hash } from 'bcryptjs';
 import { logEndFunction, logStartFunction, signTokens, verifyPassword } from '../utils';
@@ -7,18 +7,18 @@ import { BadRequestError, UnauthorizedError } from '../utils/errors';
 import { InternalServerError } from '../utils/errors/internal-server.error';
 import { createUser, getUserByFilters, getUserById, updateUser } from '../repositories';
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response, next: NextFunction) => {
   const functionName: string = register.name;
   logStartFunction(register.name);
   const { email, password, username, fullName } = req.body;
 
   if (!email || !password || !username || !fullName) {
-    throw new BadRequestError('Please fill all fields', { functionName });
+    return next(new BadRequestError('Please fill all fields', { functionName }));
   }
 
   const user: IUser | null = await UserModel.findOne({ $or: [{ email }, { username }] });
   if (user) {
-    throw new BadRequestError('User already exists', { functionName });
+    return next(new BadRequestError('User already exists', { functionName }));
   }
 
   try {
@@ -28,18 +28,18 @@ export const register = async (req: Request, res: Response) => {
 
     logEndFunction(functionName);
     res.json({ message: 'User registered successfully' });
-  } catch (error: any) {
-    throw new InternalServerError(error.message, { functionName });
+  } catch (error: unknown) {
+    return next(error);
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
   const functionName: string = login.name;
   logStartFunction(functionName);
   const { email, password } = req.body;
 
   if (!email || !password) {
-    throw new BadRequestError('Please fill all fields', { functionName });
+    return next(new BadRequestError('Please fill all fields', { functionName }));
   }
 
   const user: IUser = await getUserByFilters({ email });
@@ -51,7 +51,7 @@ export const login = async (req: Request, res: Response) => {
   res.json({ accessToken, refreshToken });
 };
 
-export const refresh = async (req: Request, res: Response) => {
+export const refresh = async (req: Request, res: Response, next: NextFunction) => {
   const functionName: string = refresh.name;
   logStartFunction(functionName);
 
@@ -60,7 +60,7 @@ export const refresh = async (req: Request, res: Response) => {
   const user: IUser = await getUserById(id);
   if (!user.tokens.includes(token)) {
     await updateUser(id, { tokens: [] });
-    throw new UnauthorizedError('Token not found', { functionName });
+    return next(new UnauthorizedError('Token not found', { functionName }));
   }
 
   const { accessToken, refreshToken } = signTokens(id);
@@ -71,7 +71,7 @@ export const refresh = async (req: Request, res: Response) => {
   res.send({ accessToken, refreshToken });
 };
 
-export const logout = async (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
   const functionName: string = logout.name;
   logStartFunction(functionName);
 
@@ -80,7 +80,7 @@ export const logout = async (req: Request, res: Response) => {
   const user: IUser = await getUserById(id);
   if (!user.tokens.includes(token)) {
     await updateUser(id, { tokens: [] });
-    throw new UnauthorizedError('Token not found', { functionName });
+    return next(new UnauthorizedError('Token not found', { functionName }));
   }
 
   user.tokens.splice(user.tokens.indexOf(token), 1);
@@ -102,13 +102,13 @@ export const verifyUser = async (req: Request, res: Response) => {
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-export const loginWithGoogle = async (req: Request, res: Response) => {
+export const loginWithGoogle = async (req: Request, res: Response, next: NextFunction) => {
   const functionName: string = loginWithGoogle.name;
   logStartFunction(functionName);
 
   const { token } = req.body;
   if (!token) {
-    throw new BadRequestError('Missing credential', { functionName });
+    return next(new BadRequestError('Missing credential', { functionName }));
   }
 
   try {
@@ -119,7 +119,7 @@ export const loginWithGoogle = async (req: Request, res: Response) => {
 
     const payload = ticket.getPayload();
     if (!payload || !payload.email) {
-      throw new BadRequestError('Invalid Google token payload', { functionName });
+      return next(new BadRequestError('Invalid Google token payload', { functionName }));
     }
 
     const { email, name } = payload;
@@ -145,6 +145,6 @@ export const loginWithGoogle = async (req: Request, res: Response) => {
     logEndFunction(functionName);
     res.json({ accessToken, refreshToken });
   } catch (error: any) {
-    throw new InternalServerError(error.message, { functionName });
+    return next(new InternalServerError(error.message, { functionName }));
   }
 };
