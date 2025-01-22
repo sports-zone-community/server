@@ -9,7 +9,6 @@ export const errorMiddleware = (
   res: Response,
   next: NextFunction,
 ): void => {
-  console.log('typeof err: ', typeof err);
   if (err instanceof BaseError) {
     logError(err.message, err.props.functionName);
     res.status(err.status).json({ error: `[${err.constructor.name}]: ${err.message}` });
