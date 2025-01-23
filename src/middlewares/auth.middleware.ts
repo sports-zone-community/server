@@ -10,9 +10,8 @@ declare global {
 }
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  const functionName: string = authMiddleware.name;
-  const token: string = getAuthHeader(req, functionName);
-  const { userId }: TokenPayload = verifyToken(token, functionName);
+  const token: string = getAuthHeader(req);
+  const { userId }: TokenPayload = verifyToken(token);
 
   req.user = { id: userId, token };
   next();
