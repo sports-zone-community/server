@@ -1,8 +1,8 @@
-import { BaseError, ErrorProps } from './base.error';
+import { BaseError } from './base.error';
 import { StatusCodes } from 'http-status-codes';
 
 export class BadRequestError extends BaseError {
-  constructor(message: string, props: ErrorProps) {
-    super(StatusCodes.BAD_REQUEST, message, props);
+  constructor(message: string) {
+    super(StatusCodes.BAD_REQUEST, message);
   }
 }

@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { BaseError } from '../utils/errors/base.error';
-import { logError } from '../utils';
 import { StatusCodes } from 'http-status-codes';
 
 export const errorMiddleware = (
@@ -10,7 +9,6 @@ export const errorMiddleware = (
   next: NextFunction,
 ): void => {
   if (err instanceof BaseError) {
-    logError(err.message, err.props.functionName);
     res.status(err.status).json({ error: `[${err.constructor.name}]: ${err.message}` });
   } else {
     res

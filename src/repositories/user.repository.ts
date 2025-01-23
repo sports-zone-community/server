@@ -1,39 +1,43 @@
-import { IUser, UserModel } from '../models';
-import { NotFoundError } from '../utils/errors';
+import { UserDocument, UserModel } from '../models';
+import { InternalServerError, NotFoundError } from '../utils';
 import { FilterQuery } from 'mongoose';
-import { InternalServerError } from '../utils/errors/internal-server.error';
 
-export const getUserById = async (userId: string): Promise<IUser> => {
-  const user: IUser | null = await UserModel.findById(userId);
+export const getUserById = async (userId: string): Promise<UserDocument> => {
+  const user: UserDocument | null = await UserModel.findById(userId);
   if (!user) {
-    throw new NotFoundError('User not found', { functionName: 'Change me' });
+    throw new NotFoundError('User not found');
   }
 
   return user;
 };
 
-export const getUserByFilters = async (filters: FilterQuery<IUser>): Promise<IUser> => {
-  const user: IUser | null = await UserModel.findOne(filters);
+export const getUserByFilters = async (
+  filters: FilterQuery<UserDocument>,
+): Promise<UserDocument> => {
+  const user: UserDocument | null = await UserModel.findOne(filters);
   if (!user) {
-    throw new NotFoundError('User not found', { functionName: 'Change me' });
+    throw new NotFoundError('User not found');
   }
 
   return user;
 };
 
-export const updateUser = async (userId: string, userUpdate: Partial<IUser>): Promise<IUser> => {
-  const user: IUser | null = await UserModel.findByIdAndUpdate(userId, userUpdate);
+export const updateUser = async (
+  userId: string,
+  userUpdate: Partial<UserDocument>,
+): Promise<UserDocument> => {
+  const user: UserDocument | null = await UserModel.findByIdAndUpdate(userId, userUpdate);
   if (!user) {
-    throw new NotFoundError('User not found', { functionName: 'Change me' });
+    throw new NotFoundError('User not found');
   }
 
   return user;
 };
 
-export const createUser = async (user: Partial<IUser>): Promise<IUser> => {
+export const createUser = async (user: Partial<UserDocument>): Promise<UserDocument> => {
   try {
     return await UserModel.create(user);
   } catch (error: any) {
-    throw new InternalServerError(error.message, { functionName: 'Change me' });
+    throw new InternalServerError(error.message);
   }
 };

@@ -7,10 +7,10 @@ export interface TokenPayload {
   userId: string;
 }
 
-export const getAuthHeader = (req: Request, functionName: string): string => {
+export const getAuthHeader = (req: Request): string => {
   const token: string | undefined = req.header('Authorization')?.split(' ')[1];
   if (!token) {
-    throw new BadRequestError('No "Authorization" header provided', { functionName });
+    throw new BadRequestError('No "Authorization" header provided');
   }
 
   return token;
@@ -28,17 +28,17 @@ export const signTokens = (userId: string): { accessToken: string; refreshToken:
   return { accessToken, refreshToken };
 };
 
-export const verifyToken = (token: string, functionName: string): TokenPayload => {
+export const verifyToken = (token: string): TokenPayload => {
   try {
     return verify(token, process.env.REFRESH_TOKEN_SECRET as Secret) as TokenPayload;
   } catch (error: unknown) {
-    throw new UnauthorizedError('Invalid token', { functionName });
+    throw new UnauthorizedError('Invalid token');
   }
 };
 
 export const verifyPassword = async (password: string, hashedPassword: string) => {
   const isMatch: boolean = await compare(password, hashedPassword);
   if (!isMatch) {
-    throw new UnauthorizedError('Invalid credentials', { functionName: 'Change me' });
+    throw new UnauthorizedError('Invalid credentials');
   }
 };

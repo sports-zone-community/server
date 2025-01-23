@@ -1,2 +1,2 @@
-export * from './log.utils';
+export * from './errors';
 export * from './auth.utils';
