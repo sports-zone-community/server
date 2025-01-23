@@ -6,7 +6,7 @@ import {
   InternalServerError,
   signTokens,
   Tokens,
-  UnauthorizedError,
+  validateToken,
   verifyPassword,
 } from '../utils';
 import { OAuth2Client } from 'google-auth-library';
@@ -61,10 +61,7 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
     const { id, token }: { id: string; token: string } = req.user;
 
     const user: UserDocument = await getUserById(id);
-    if (!user.tokens.includes(token)) {
-      await updateUser(id, { tokens: [] });
-      return next(new UnauthorizedError('Token not found'));
-    }
+    await validateToken(user, token);
 
     const { accessToken, refreshToken }: Tokens = signTokens(id);
     user.tokens[user.tokens.indexOf(token)] = refreshToken;
@@ -81,10 +78,7 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     const { id, token }: { id: string; token: string } = req.user;
 
     const user: UserDocument = await getUserById(id);
-    if (!user.tokens.includes(token)) {
-      await updateUser(id, { tokens: [] });
-      return next(new UnauthorizedError('Token not found'));
-    }
+    await validateToken(user, token);
 
     user.tokens.splice(user.tokens.indexOf(token), 1);
     await updateUser(id, { tokens: [...user.tokens] });
