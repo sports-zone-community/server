@@ -5,6 +5,7 @@ import {
   BadRequestError,
   InternalServerError,
   signTokens,
+  Tokens,
   UnauthorizedError,
   verifyPassword,
 } from '../utils';
@@ -47,7 +48,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     const user: UserDocument = await getUserByFilters({ email });
     await verifyPassword(password, user.password);
 
-    const { accessToken, refreshToken } = signTokens(user.id);
+    const { accessToken, refreshToken }: Tokens = signTokens(user.id);
     await updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
     res.json({ accessToken, refreshToken });
   } catch (error: unknown) {
@@ -65,7 +66,7 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
       return next(new UnauthorizedError('Token not found'));
     }
 
-    const { accessToken, refreshToken } = signTokens(id);
+    const { accessToken, refreshToken }: Tokens = signTokens(id);
     user.tokens[user.tokens.indexOf(token)] = refreshToken;
     await updateUser(id, { tokens: [...user.tokens] });
 
@@ -124,7 +125,7 @@ export const loginWithGoogle = async (req: Request, res: Response, next: NextFun
 
     const { email, name } = payload;
 
-    let user = await UserModel.findOne({ email });
+    let user: UserDocument | null = await UserModel.findOne({ email });
     if (!user) {
       user = new UserModel({
         email,
@@ -136,7 +137,7 @@ export const loginWithGoogle = async (req: Request, res: Response, next: NextFun
       await user.save();
     }
 
-    const { accessToken, refreshToken } = signTokens(user.id);
+    const { accessToken, refreshToken }: Tokens = signTokens(user.id);
 
     const MAX_TOKENS = 5;
     user.tokens = [...(user.tokens || []), refreshToken].slice(-MAX_TOKENS);

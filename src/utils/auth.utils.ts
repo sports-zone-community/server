@@ -7,6 +7,11 @@ export interface TokenPayload {
   userId: string;
 }
 
+export interface Tokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export const getAuthHeader = (req: Request): string => {
   const token: string | undefined = req.header('Authorization')?.split(' ')[1];
   if (!token) {
@@ -16,14 +21,17 @@ export const getAuthHeader = (req: Request): string => {
   return token;
 };
 
-export const signTokens = (userId: string): { accessToken: string; refreshToken: string } => {
+export const signTokens = (userId: string): Tokens => {
   const accessToken: string = sign(
     { userId } as TokenPayload,
     process.env.ACCESS_TOKEN_SECRET as Secret,
     { expiresIn: process.env.JWT_TOKEN_EXPIRATION },
   );
 
-  const refreshToken = sign({ userId } as TokenPayload, process.env.REFRESH_TOKEN_SECRET as Secret);
+  const refreshToken: string = sign(
+    { userId } as TokenPayload,
+    process.env.REFRESH_TOKEN_SECRET as Secret,
+  );
 
   return { accessToken, refreshToken };
 };
