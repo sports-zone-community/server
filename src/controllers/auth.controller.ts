@@ -15,7 +15,7 @@ import {
   loginSchema,
   RegisterObject,
   registerSchema,
-} from '../validations/schemas/user.schemas';
+} from '../validations/schemas/auth.schemas';
 import { validateSchema } from '../validations/schema.validation';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
