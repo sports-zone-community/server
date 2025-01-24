@@ -4,15 +4,7 @@ import { BadRequestError, UnauthorizedError } from './errors';
 import { compare } from 'bcryptjs';
 import { UserDocument } from '../models';
 import { updateUser } from '../repositories';
-
-export interface TokenPayload {
-  userId: string;
-}
-
-export interface Tokens {
-  accessToken: string;
-  refreshToken: string;
-}
+import { TokenPayload, Tokens } from './types';
 
 export const getAuthHeader = (req: Request): string => {
   const token: string | undefined = req.header('Authorization')?.split(' ')[1];

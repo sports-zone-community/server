@@ -4,6 +4,7 @@ import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
   InternalServerError,
+  LoggedUser,
   signTokens,
   Tokens,
   validateToken,
@@ -18,6 +19,7 @@ import {
   registerSchema,
 } from '../validations/schemas/auth.schemas';
 import { validateSchema } from '../validations/schema.validation';
+import { StatusCodes } from 'http-status-codes';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -32,10 +34,10 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     }
 
     const salt: string = await genSalt(10);
-    const encryptedPassword = await hash(password, salt);
+    const encryptedPassword: string = await hash(password, salt);
     await createUser({ email, password: encryptedPassword, username, fullName });
 
-    res.json({ message: 'User registered successfully' });
+    res.status(StatusCodes.CREATED).json({ message: 'User registered successfully' });
   } catch (error: unknown) {
     return next(error);
   }
@@ -50,7 +52,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     const { accessToken, refreshToken }: Tokens = signTokens(user.id);
     await updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
-    res.json({ accessToken, refreshToken });
+    res.status(StatusCodes.OK).json({ accessToken, refreshToken });
   } catch (error: unknown) {
     return next(error);
   }
@@ -58,7 +60,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const refresh = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, token }: { id: string; token: string } = req.user;
+    const { id, token }: LoggedUser = req.user;
 
     const user: UserDocument = await getUserById(id);
     await validateToken(user, token);
@@ -67,7 +69,7 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
     user.tokens[user.tokens.indexOf(token)] = refreshToken;
     await updateUser(id, { tokens: [...user.tokens] });
 
-    res.send({ accessToken, refreshToken });
+    res.status(StatusCodes.OK).send({ accessToken, refreshToken });
   } catch (error: unknown) {
     return next(error);
   }
@@ -75,7 +77,7 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
 
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, token }: { id: string; token: string } = req.user;
+    const { id, token }: LoggedUser = req.user;
 
     const user: UserDocument = await getUserById(id);
     await validateToken(user, token);
@@ -83,7 +85,7 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     user.tokens.splice(user.tokens.indexOf(token), 1);
     await updateUser(id, { tokens: [...user.tokens] });
 
-    res.send('User logged out successfully');
+    res.status(StatusCodes.OK).send('User logged out successfully');
   } catch (error: unknown) {
     return next(error);
   }
@@ -92,13 +94,13 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
 export const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user: UserDocument = await getUserById(req.user!.id);
-    res.json({ user });
+    res.status(StatusCodes.OK).json({ user });
   } catch (error: unknown) {
     return next(error);
   }
 };
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client: OAuth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const loginWithGoogle = async (req: Request, res: Response, next: NextFunction) => {
   const { token } = req.body;
@@ -133,11 +135,11 @@ export const loginWithGoogle = async (req: Request, res: Response, next: NextFun
 
     const { accessToken, refreshToken }: Tokens = signTokens(user.id);
 
-    const MAX_TOKENS = 5;
-    user.tokens = [...(user.tokens || []), refreshToken].slice(-MAX_TOKENS);
+    const maxTokens: number = Number(process.env.GOOGLE_CLIENT_ID);
+    user.tokens = [...(user.tokens || []), refreshToken].slice(-maxTokens);
     await user.save();
 
-    res.json({ accessToken, refreshToken });
+    res.status(StatusCodes.OK).json({ accessToken, refreshToken });
   } catch (error: any) {
     return next(new InternalServerError(error.message));
   }
