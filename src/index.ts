@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import app from './app';
+import { app } from './app';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { SocketService } from './socket/socket.service';
@@ -22,7 +22,7 @@ const io = new Server(httpServer, {
 
 new SocketService(io);
 
-export const startServer = async () => {
+(async () => {
   try {
     await mongoose.connect(dbUrl);
     console.log('Connected to MongoDB');
@@ -34,6 +34,4 @@ export const startServer = async () => {
     console.error('Error connecting to MongoDB:', error);
     process.exit(1);
   }
-};
-
-startServer();
+})();

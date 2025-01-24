@@ -1,19 +1,12 @@
 import { Router } from 'express';
-import {
-  login,
-  loginWithGoogle,
-  logout,
-  refreshToken,
-  register,
-  verifyUser,
-} from '../controllers/auth';
-import { authMiddleware } from '../common/auth-middleware';
+import { authMiddleware } from '../middlewares';
+import { AuthController } from '../controllers';
 
 export const authRouter: Router = Router();
 
-authRouter.post('/register', register);
-authRouter.post('/login', login);
-authRouter.post('/logout', logout);
-authRouter.post('/refreshToken', refreshToken);
-authRouter.get('/verify', authMiddleware, verifyUser);
-authRouter.post('/google', loginWithGoogle);
+authRouter.post('/register', AuthController.register);
+authRouter.post('/login', AuthController.login);
+authRouter.post('/logout', authMiddleware, AuthController.logout);
+authRouter.post('/refreshToken', authMiddleware, AuthController.refresh);
+authRouter.get('/verify', authMiddleware, AuthController.verifyUser);
+authRouter.post('/google', AuthController.loginWithGoogle);

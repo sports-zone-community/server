@@ -1,17 +1,12 @@
 import { hash } from 'bcryptjs';
-import { User } from '../../models/user.model';
+import { UserModel } from '../../models';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
-import app from '../../app';
+import { app } from '../../app';
 
-const createUser = async (
-  email: string,
-  password: string,
-  username: string,
-  fullName: string,
-) => {
+const createUser = async (email: string, password: string, username: string, fullName: string) => {
   const hashedPassword = await hash(password, 10);
-  return User.create({
+  return UserModel.create({
     email,
     password: hashedPassword,
     username,
@@ -25,12 +20,7 @@ const testLogin = async (email: string, password: string) => {
 
 describe('AUTH ROUTES - POST /auth/login', () => {
   it('should log in a user with valid credentials', async () => {
-    await createUser(
-      'test@example.com',
-      'password123',
-      'testuser',
-      'Test User',
-    );
+    await createUser('test@example.com', 'password123', 'testuser', 'Test User');
     const response = await testLogin('test@example.com', 'password123');
 
     expect(response.status).toBe(StatusCodes.OK);
@@ -39,12 +29,7 @@ describe('AUTH ROUTES - POST /auth/login', () => {
   });
 
   it('should log in again to update refresh token', async () => {
-    await createUser(
-      'test@example.com',
-      'password123',
-      'testuser',
-      'Test User',
-    );
+    await createUser('test@example.com', 'password123', 'testuser', 'Test User');
     await testLogin('test@example.com', 'password123');
     const response = await testLogin('test@example.com', 'password123');
 
@@ -76,7 +61,7 @@ describe('AUTH ROUTES - POST /auth/login', () => {
   it('should return an error for invalid credentials', async () => {
     const hashedPassword = await hash('password123', 10);
 
-    await User.create({
+    await UserModel.create({
       email: 'test@example.com',
       password: hashedPassword,
       username: 'testuser',
@@ -100,13 +85,9 @@ describe('AUTH ROUTES - POST /auth/login', () => {
       fullName: 'Test User',
     };
 
-    jest
-      .spyOn(User, 'findOne')
-      .mockRejectedValue(new Error('Internal Server Error'));
+    jest.spyOn(UserModel, 'findOne').mockRejectedValue(new Error('Internal Server Error'));
 
-    const response = await supertest(app)
-      .post('/auth/login')
-      .send(mockUserRequest);
+    const response = await supertest(app).post('/auth/login').send(mockUserRequest);
 
     expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(response.body.error).toBe('Internal Server Error');

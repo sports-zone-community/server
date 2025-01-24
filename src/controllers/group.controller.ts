@@ -3,15 +3,14 @@ import { StatusCodes } from 'http-status-codes';
 import { Types } from 'mongoose';
 
 import { createGroupSchema, joinGroupSchema } from '../validations/group.validation';
-import { logEndFunction, logError, logStartFunction } from '../utils/utils';
 import { createAndSaveGroup, joinUserToGroup } from '../repository/group.repository';
 import { IGroup } from '../models/group.model';
 
+// TODO: in every function - next errors instead of sending them to res
 
 export const createGroup = async (req: Request, res: Response) => {
   const { name, description, members } = req.body;
   const userId = req.user?.id;
-  logStartFunction('createGroup');
 
   const { error } = createGroupSchema.validate(req.body);
   if (error) {
@@ -22,10 +21,8 @@ export const createGroup = async (req: Request, res: Response) => {
   try {
     const group: IGroup | null = await createAndSaveGroup({name, description, members}, new Types.ObjectId(userId));
 
-    logEndFunction('createGroup');
     res.status(StatusCodes.CREATED).json(group);
   } catch (error: any) {
-    logError(error.message, 'createGroup');
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     return;
   }
@@ -34,8 +31,7 @@ export const createGroup = async (req: Request, res: Response) => {
 export const joinGroup = async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const { groupId } = req.params;
-  logStartFunction('joinGroup');
-  
+
   const { error } = joinGroupSchema.validate({ groupId });
   if (error) {
     res.status(StatusCodes.BAD_REQUEST).json({ error: error.details[0].message });
@@ -45,7 +41,6 @@ export const joinGroup = async (req: Request, res: Response) => {
   try {
     const group: IGroup | null = await joinUserToGroup(new Types.ObjectId(groupId), new Types.ObjectId(userId));
     
-    logEndFunction('joinGroup');
     res.status(StatusCodes.OK).json(group);
   } catch (error: any) {
     if (error.message === 'Group not found') {
@@ -53,7 +48,6 @@ export const joinGroup = async (req: Request, res: Response) => {
       return;
     }
 
-    logError(error.message, 'joinGroup');
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     return;
   }

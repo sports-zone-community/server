@@ -1,10 +1,10 @@
-import { ChatModel, Chat } from '../models/chat.model';
+import { ChatModel } from '../models/chat.model';
 import { GroupModel, IGroup } from '../models/group.model';
-import { User } from '../models/user.model';
+import { UserModel } from '../models';
 import { Types } from 'mongoose';
 
 export const createAndSaveGroup = async (
-  groupData: {name: string, description: string, members: Types.ObjectId[]},
+  groupData: { name: string; description: string; members: Types.ObjectId[] },
   userId: Types.ObjectId,
 ): Promise<IGroup> => {
   try {
@@ -13,23 +13,23 @@ export const createAndSaveGroup = async (
       description: groupData.description,
       creator: userId,
       members: [...groupData.members, userId],
-      admins: [userId]
+      admins: [userId],
     });
-    
+
     const chatData = {
       isGroupChat: true,
       groupId: group._id as string,
       groupName: groupData.name,
       participants: [...groupData.members, userId],
-      messages: []
+      messages: [],
     };
-    
+
     await Promise.all([
       ChatModel.create(chatData),
-      User.updateMany(
-        { _id: { $in: [...groupData.members, userId] }},
-        { $push: { groups: group._id }}
-      )
+      UserModel.updateMany(
+        { _id: { $in: [...groupData.members, userId] } },
+        { $push: { groups: group._id } },
+      ),
     ]);
 
     return group;
@@ -38,12 +38,15 @@ export const createAndSaveGroup = async (
   }
 };
 
-export const joinUserToGroup = async (groupId: Types.ObjectId, userId: Types.ObjectId): Promise<IGroup | null> => {
+export const joinUserToGroup = async (
+  groupId: Types.ObjectId,
+  userId: Types.ObjectId,
+): Promise<IGroup | null> => {
   try {
     const group: IGroup | null = await GroupModel.findByIdAndUpdate(
       groupId,
       { $addToSet: { members: userId } },
-      { new: true }
+      { new: true },
     );
 
     if (!group) {
@@ -51,10 +54,10 @@ export const joinUserToGroup = async (groupId: Types.ObjectId, userId: Types.Obj
     }
 
     await Promise.all([
-      User.findByIdAndUpdate(userId, { $addToSet: { groups: groupId } }),
-      ChatModel.findOneAndUpdate({ groupId: groupId }, { $addToSet: { participants: userId } })
+      UserModel.findByIdAndUpdate(userId, { $addToSet: { groups: groupId } }),
+      ChatModel.findOneAndUpdate({ groupId: groupId }, { $addToSet: { participants: userId } }),
     ]);
-    
+
     return group;
   } catch (error) {
     throw error;

@@ -1,5 +1,7 @@
 import { Document, model, Schema } from 'mongoose';
 
+// TODO: Group should not hold the members, it should be only in User
+
 export interface IGroup extends Document {
   name: string;
   description?: string;

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authMiddleware } from '../common/auth-middleware';
 import { createGroup, joinGroup } from '../controllers/group.controller';
+import { authMiddleware } from '../middlewares';
 
 export const groupRouter: Router = Router();
 

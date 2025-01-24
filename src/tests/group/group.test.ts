@@ -1,11 +1,11 @@
 import { Types } from 'mongoose';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
-import app from '../../app';
+import { app } from '../../app';
 import { GroupModel } from '../../models/group.model';
-import { User } from '../../models/user.model';
 import { ChatModel } from '../../models/chat.model';
 import { createUser } from '../../utils/functions/tests/test.functions';
+import { UserModel } from '../../models';
 
 describe('GROUP ROUTES', () => {
   let token: string;
@@ -42,7 +42,7 @@ describe('GROUP ROUTES', () => {
       
       const group = await GroupModel.findById(response.body._id);
       const chat = await ChatModel.findOne({ groupId: response.body._id });
-      const user = await User.findById(mockGroup.creatorId);
+      const user = await UserModel.findById(mockGroup.creatorId);
       
       expect(group).toBeTruthy();
       expect(chat).toBeTruthy();
@@ -127,7 +127,7 @@ describe('GROUP ROUTES', () => {
       
       const updatedGroup = await GroupModel.findById(mockGroup._id);
       const updatedChat = await ChatModel.findById(mockChat._id);
-      const updatedUser = await User.findById(userId);
+      const updatedUser = await UserModel.findById(userId);
 
       expect(updatedGroup?.members.map(id => id.toString())).toContain(userId.toString());
       expect(updatedChat?.participants.map(id => id.toString())).toContain(userId.toString());

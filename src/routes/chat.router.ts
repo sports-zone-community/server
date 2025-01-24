@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { authMiddleware } from '../common/auth-middleware';
 import {
   getUserChats,
   markMessagesAsRead,
   getUnreadMessages,
-  getChatMessages
+  getChatMessages,
 } from '../controllers/chat.controller';
+import { authMiddleware } from '../middlewares';
 
 export const chatRouter: Router = Router();
 

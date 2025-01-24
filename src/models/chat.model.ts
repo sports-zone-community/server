@@ -1,6 +1,7 @@
 import { Document, model, Schema, Types  } from 'mongoose';
 import { IMessage, messageSchema } from './message.model';
 
+// TODO: Chat should not have participants?
 
 export interface Chat extends Document {
   participants: Types.ObjectId[];

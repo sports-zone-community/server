@@ -1,6 +1,8 @@
-import { Document, model, Schema } from 'mongoose';
+import { model, Model, Schema, Document } from 'mongoose';
 
-export interface IUser extends Document {
+// TODO: User should have an array of groups and an array of chats he is in?
+
+export interface User {
   username: string;
   password: string;
   email: string;
@@ -9,7 +11,9 @@ export interface IUser extends Document {
   groups: Schema.Types.ObjectId[];
 }
 
-const userSchema = new Schema<IUser>({
+export type UserDocument = User & Document;
+
+const userSchema = new Schema<UserDocument>({
   username: {
     type: String,
     required: true,
@@ -28,6 +32,7 @@ const userSchema = new Schema<IUser>({
   },
   tokens: {
     type: [String],
+    default: [],
   },
   groups: [{
     type: Schema.Types.ObjectId,
@@ -35,4 +40,4 @@ const userSchema = new Schema<IUser>({
   }]
 });
 
-export const User = model<IUser>('User', userSchema);
+export const UserModel: Model<UserDocument> = model<UserDocument>('User', userSchema);

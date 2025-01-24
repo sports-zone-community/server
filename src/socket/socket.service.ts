@@ -1,10 +1,10 @@
 import { Server, Socket } from 'socket.io';
 import { ChatModel, Chat } from '../models/chat.model';
 import { Types } from 'mongoose';
-import { User } from '../models/user.model';
 import { IMessage } from '../models/message.model';
 import { verify } from 'jsonwebtoken';
 import { Secret } from 'jsonwebtoken';
+import { UserModel } from '../models';
 export class SocketService {
   private activeChats: Map<string, Set<string>> = new Map();
   private authenticatedSockets: Map<string, string> = new Map();
@@ -82,7 +82,7 @@ export class SocketService {
     socket.join(userId);
     console.log(`User ${userId} joined their personal room`);
 
-    const user = await User.findById(userId);
+    const user = await UserModel.findById(userId);
     if (!user) {
       throw new Error(`User not found: ${userId}`);
     }

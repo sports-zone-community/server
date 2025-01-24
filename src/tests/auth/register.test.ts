@@ -1,8 +1,8 @@
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { hash } from 'bcryptjs';
-import { User } from '../../models/user.model';
-import app from '../../app';
+import { UserModel } from '../../models';
+import { app } from '../../app';
 
 describe('AUTH ROUTES - POST /auth/register', () => {
   it('should register a new user', async () => {
@@ -13,9 +13,7 @@ describe('AUTH ROUTES - POST /auth/register', () => {
       fullName: 'Test User',
     };
 
-    const response = await supertest(app)
-      .post('/auth/register')
-      .send(mockUserRequest);
+    const response = await supertest(app).post('/auth/register').send(mockUserRequest);
 
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body.message).toBe('User registered successfully');
@@ -29,9 +27,7 @@ describe('AUTH ROUTES - POST /auth/register', () => {
       username: 'testuser',
     };
 
-    const response = await supertest(app)
-      .post('/auth/register')
-      .send(mockUserRequest);
+    const response = await supertest(app).post('/auth/register').send(mockUserRequest);
 
     expect(response.status).toBe(StatusCodes.BAD_REQUEST);
     expect(response.body.error).toBe('Please fill all fields');
@@ -44,11 +40,9 @@ describe('AUTH ROUTES - POST /auth/register', () => {
       username: 'testuser',
       fullName: 'Test User',
     };
-    await User.create(mockUserRequest);
+    await UserModel.create(mockUserRequest);
 
-    const response = await supertest(app)
-      .post('/auth/register')
-      .send(mockUserRequest);
+    const response = await supertest(app).post('/auth/register').send(mockUserRequest);
 
     expect(response.status).toBe(StatusCodes.BAD_REQUEST);
     expect(response.body.error).toBe('User already exists');
@@ -61,13 +55,9 @@ describe('AUTH ROUTES - POST /auth/register', () => {
       fullName: 'Test User',
     };
 
-    jest
-      .spyOn(User.prototype, 'save')
-      .mockRejectedValue(new Error('Internal Server Error'));
+    jest.spyOn(UserModel.prototype, 'save').mockRejectedValue(new Error('Internal Server Error'));
 
-    const response = await supertest(app)
-      .post('/auth/register')
-      .send(mockUserRequest);
+    const response = await supertest(app).post('/auth/register').send(mockUserRequest);
 
     expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(response.body.error).toBe('Internal Server Error');
