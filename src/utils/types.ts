@@ -10,6 +10,7 @@ export interface Tokens {
 export interface LoggedUser {
   id: string;
   token: string;
+  groups?: string[];
 }
 
 declare global {
