@@ -5,7 +5,7 @@ import app from '../../app';
 import { GroupModel } from '../../models/group.model';
 import { User } from '../../models/user.model';
 import { ChatModel } from '../../models/chat.model';
-import { createUser } from '../../utils/functions/testFunctions/testFunctions';
+import { createUser } from '../../utils/functions/tests/test.functions';
 
 describe('GROUP ROUTES', () => {
   let token: string;

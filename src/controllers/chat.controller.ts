@@ -2,9 +2,9 @@ import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { Types, UpdateResult } from 'mongoose';
 
-import { PopulatedChat } from '../utils/interfaces/Populated';
+import { PopulatedChat } from '../utils/interfaces/populated';
 import { logStartFunction, logEndFunction, logError } from '../utils/utils';
-import { formatChat, getUnreadChats, processChatsData, sortMessages } from '../utils/functions/chatFunctions';
+import { getUnreadChats, processChatsData, sortMessages } from '../utils/functions/chat.functions';
 import { fetchUserChats, markMessagesAsReaded, getUnreadMsg, getChatById } from '../repository/chat.repository';
 import { getChatMessagesSchema } from '../validations/chat.validation';
 import { FormattedChat, FormattedMessage } from '../utils/interfaces/chat';

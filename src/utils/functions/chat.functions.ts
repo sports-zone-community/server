@@ -1,6 +1,6 @@
-import { PopulatedChat, PopulatedMessage, PopulatedUser } from '../interfaces/Populated';
+import { PopulatedChat, PopulatedMessage, PopulatedUser } from '../interfaces/populated';
 import { Types } from 'mongoose';
-import { PopulatedGroup } from '../interfaces/Populated';
+import { PopulatedGroup } from '../interfaces/populated';
 import { FormattedChat, FormattedMessage } from '../interfaces/chat';
   
 export const processChatsData = (chats: PopulatedChat[], userId: string): FormattedChat[] => {
@@ -65,24 +65,6 @@ export const processChatsData = (chats: PopulatedChat[], userId: string): Format
       }));
   };
   
-  export const formatChat = (chat: PopulatedChat, userId: Types.ObjectId, messages: FormattedMessage[]): FormattedChat => {
-    return {
-      chatId: chat._id as string,
-      isGroupChat: chat.isGroupChat,
-      chatName: chat.isGroupChat 
-        ? (chat.groupId as unknown as PopulatedGroup)?.name 
-        : (chat.participants.find((p: PopulatedUser) => p._id !== userId) as unknown as PopulatedUser)?.fullName,
-      participants: chat.participants.map(p => ({
-        _id: p._id,
-        fullName: (p as unknown as PopulatedUser).fullName,
-        username: (p as unknown as PopulatedUser).username
-      })),
-      messages: messages,
-      lastMessage: messages[messages.length - 1],
-      unreadCount: chat.messages.filter(m => !m.read.includes(new Types.ObjectId(userId))).length
-    };
-  }
-
 export const getUnreadCount = (messages: PopulatedMessage[], userId: string): number => 
     messages.filter(
       msg => !msg.read.includes(new Types.ObjectId(userId)) && 

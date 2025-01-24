@@ -1,4 +1,4 @@
-import { PopulatedUser } from './Populated';
+import { PopulatedUser } from './populated';
 import { Types } from 'mongoose';
 
 export interface FormattedChat {

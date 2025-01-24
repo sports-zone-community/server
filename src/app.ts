@@ -1,11 +1,10 @@
 import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes';
 import cors from 'cors';
-import chatRoutes from './routes/chatRoutes';
-import groupRoutes from './routes/groupRoutes';
-
+import { chatRouter } from './routes/chat.router';
+import { groupRouter } from './routes/group.router';
+import { authRouter } from './routes/auth.router';
 dotenv.config();
 
 const app: Application = express();
@@ -20,8 +19,8 @@ app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
 
-app.use('/auth', authRoutes);
-app.use('/chats', chatRoutes);
-app.use('/groups', groupRoutes);
+app.use('/auth', authRouter);
+app.use('/chats', chatRouter);
+app.use('/groups', groupRouter);
 
 export default app;

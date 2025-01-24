@@ -1,4 +1,4 @@
-import { PopulatedUser, PopulatedGroup, PopulatedMessage, PopulatedChat } from '../utils/interfaces/Populated';
+import { PopulatedUser, PopulatedGroup, PopulatedMessage, PopulatedChat } from '../utils/interfaces/populated';
 import { ChatModel } from '../models/chat.model';
 import { Types, UpdateResult } from 'mongoose';
 

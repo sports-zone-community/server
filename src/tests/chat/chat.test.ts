@@ -3,7 +3,7 @@ import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import app from '../../app';
 import { ChatModel } from '../../models/chat.model';
-import { createUser, mockPopulateMock } from '../../utils/functions/testFunctions/testFunctions';
+import { createUser, mockPopulateMock } from '../../utils/functions/tests/test.functions';
 import { FormattedMessage } from '../../utils/interfaces/chat';
 import { Request } from 'express';
 
