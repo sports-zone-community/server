@@ -7,6 +7,8 @@ export interface Tokens {
   refreshToken: string;
 }
 
+// TODO: Make all fields optional again?
+
 export interface LoggedUser {
   id: string;
   token: string;
