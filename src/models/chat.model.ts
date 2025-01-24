@@ -1,8 +1,8 @@
 import { Document, model, Schema, Types  } from 'mongoose';
-import { IMessage } from './message.model';
+import { IMessage, messageSchema } from './message.model';
 
 
-export interface IChat extends Document {
+export interface Chat extends Document {
   participants: Types.ObjectId[];
   isGroupChat: boolean;
   groupId?: Types.ObjectId;
@@ -12,30 +12,7 @@ export interface IChat extends Document {
   chatName?: string;
 }
 
-  const messageSchema = new Schema<IMessage>({
-    sender: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    senderName: {
-      type: String
-    },
-    content: {
-      type: String,
-      required: true
-    },
-    timestamp: {
-      type: Date,
-      default: Date.now
-    },
-    read: {
-      type: [Schema.Types.ObjectId],
-      default: []
-    }
-  });
-
-const chatSchema = new Schema<IChat>({
+export const chatSchema = new Schema<Chat>({
   participants: [{
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -49,13 +26,13 @@ const chatSchema = new Schema<IChat>({
   groupId: {
     type: Schema.Types.ObjectId,
     ref: 'Group',
-    required: function(this: IChat) {
+    required: function(this: Chat) {
       return this.isGroupChat;
     }
   },
   groupName: {
     type: String,
-    required: function(this: IChat) {
+    required: function(this: Chat) {
       return this.isGroupChat;
     }
   },
@@ -69,4 +46,4 @@ const chatSchema = new Schema<IChat>({
   }
 });
 
-export const Chat = model<IChat>('Chat', chatSchema); 
+export const ChatModel = model<Chat>('Chat', chatSchema); 

@@ -1,19 +1,19 @@
 import { PopulatedUser } from './Populated';
 import { Types } from 'mongoose';
 
-export interface Chat {
+export interface FormattedChat {
     chatId: string;
-    lastMessage: Message;
+    lastMessage: FormattedMessage;
     unreadCount: number;
     chatName?: string;
     isGroupChat?: boolean;
     groupName?: string;
     groupId?: string;
     participants?: PopulatedUser[];
-    messages?: Message[];
+    messages?: FormattedMessage[];
 }
 
-export interface Message {
+export interface FormattedMessage {
     messageId: string;
     sender: {
         id: string;

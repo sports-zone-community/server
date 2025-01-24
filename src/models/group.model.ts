@@ -53,4 +53,4 @@ groupSchema.pre('save', function(next) {
   next();
 });
 
-export const Group = model<IGroup>('Group', groupSchema); 
+export const GroupModel = model<IGroup>('Group', groupSchema); 

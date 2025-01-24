@@ -1,9 +1,9 @@
 import { PopulatedUser, PopulatedGroup, PopulatedMessage, PopulatedChat } from '../utils/interfaces/Populated';
-import { Chat } from '../models/chat.model';
+import { ChatModel } from '../models/chat.model';
 import { Types, UpdateResult } from 'mongoose';
 
 export const fetchUserChats = async (userId: Types.ObjectId): Promise<PopulatedChat[]> => 
-     Chat.find({ participants: userId })
+     ChatModel.find({ participants: userId })
       .populate<{ participants: PopulatedUser[] }>('participants', 'username fullName')
       .populate<{ groupId: PopulatedGroup }>('groupId', 'name')
       .populate<{ messages: PopulatedMessage[] }>({
@@ -23,14 +23,14 @@ export const fetchUserChats = async (userId: Types.ObjectId): Promise<PopulatedC
 
 
 export const markMessagesAsReaded = async (chatId: Types.ObjectId, userId: Types.ObjectId): Promise<UpdateResult> => 
-    Chat.updateMany(
+    ChatModel.updateMany(
       { _id: chatId },
       { $addToSet: { 'messages.$[elem].read': userId } },
       { arrayFilters: [{ 'elem.sender': { $ne: userId }, 'elem.read': { $ne: userId } }] }
     );
 
 export const getUnreadMsg = async (userId: Types.ObjectId): Promise<PopulatedChat[]> => 
-     await Chat.find({
+     await ChatModel.find({
       participants: userId,
       messages: {
         $elemMatch: {
@@ -45,7 +45,7 @@ export const getUnreadMsg = async (userId: Types.ObjectId): Promise<PopulatedCha
     .populate<{ lastMessage: PopulatedMessage }>('lastMessage.sender', 'username fullName');
 
 export const getChatById = async (chatId: Types.ObjectId): Promise<PopulatedChat | null> => 
-  await Chat.findById(chatId)
+  await ChatModel.findById(chatId)
     .populate<{ messages: PopulatedMessage[] }>('messages.sender', 'username fullName')
     .populate<{ groupId: PopulatedGroup }>('groupId', 'name')
     .populate<{ participants: PopulatedUser[] }>('participants', 'username fullName')

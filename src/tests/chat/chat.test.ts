@@ -2,9 +2,9 @@ import { Types } from 'mongoose';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import app from '../../app';
-import { Chat } from '../../models/chat.model';
+import { ChatModel } from '../../models/chat.model';
 import { createUser, mockPopulateMock } from '../../utils/functions/testFunctions/testFunctions';
-import { Message } from '../../utils/interfaces/chat';
+import { FormattedMessage } from '../../utils/interfaces/chat';
 import { Request } from 'express';
 
 describe('CHAT ROUTES', () => {
@@ -20,7 +20,7 @@ describe('CHAT ROUTES', () => {
     userId = user1.userId;
     otherUserId = user2.userId;
 
-    mockChat = await Chat.create({
+    mockChat = await ChatModel.create({
       participants: [userId, otherUserId],
       isGroupChat: false,
       messages: [{
@@ -50,7 +50,7 @@ describe('CHAT ROUTES', () => {
     });
 
     it('should return 200 with empty array when user has no chats', async () => {
-      await Chat.deleteMany({ participants: userId });
+      await ChatModel.deleteMany({ participants: userId });
       const response = await supertest(app)
         .get('/chats')
         .set('Authorization', `Bearer ${token}`);
@@ -69,7 +69,7 @@ describe('CHAT ROUTES', () => {
         populate: mockPopulate 
       });
     
-      jest.spyOn(Chat, 'find').mockImplementation(mockFind);
+      jest.spyOn(ChatModel, 'find').mockImplementation(mockFind);
     
       const response = await supertest(app)
         .get('/chats')
@@ -79,7 +79,7 @@ describe('CHAT ROUTES', () => {
     });    
 
     it('should return 200 with empty array when user has no chats', async () => {
-      await Chat.deleteMany({ participants: userId });
+      await ChatModel.deleteMany({ participants: userId });
       const response = await supertest(app)
         .get('/chats')
         .set('Authorization', `Bearer ${token}`);
@@ -104,7 +104,7 @@ describe('CHAT ROUTES', () => {
     });
 
     it('should handle empty chats result', async () => {
-      await Chat.deleteMany({});
+      await ChatModel.deleteMany({});
       const response = await supertest(app)
         .get('/chats')
         .set('Authorization', `Bearer ${token}`);
@@ -122,7 +122,7 @@ describe('CHAT ROUTES', () => {
 
       expect(response.status).toBe(StatusCodes.OK);
       
-      const updatedChat = await Chat.findById(mockChat._id);
+      const updatedChat = await ChatModel.findById(mockChat._id);
       expect(updatedChat?.messages[0].read.map(id => id.toString()))
         .toContain(userId.toString());
     });
@@ -144,7 +144,7 @@ describe('CHAT ROUTES', () => {
     });
 
     it('should return 500 when chat update fails', async () => {
-      jest.spyOn(Chat, 'updateMany').mockRejectedValueOnce(new Error('Database error'));
+      jest.spyOn(ChatModel, 'updateMany').mockRejectedValueOnce(new Error('Database error'));
       
       const response = await supertest(app)
         .put(`/chats/${mockChat._id}/read`)
@@ -179,7 +179,7 @@ describe('CHAT ROUTES', () => {
       expect(response.body.success).toBe(true);
       
       // וידוא שההודעות סומנו כנקראות
-      const updatedChat = await Chat.findById(mockChat._id);
+      const updatedChat = await ChatModel.findById(mockChat._id);
       expect(updatedChat?.messages[0].read).toContainEqual(new Types.ObjectId(userId));
     });
   });
@@ -206,7 +206,7 @@ describe('CHAT ROUTES', () => {
         populate: mockPopulate 
       });
     
-      jest.spyOn(Chat, 'find').mockImplementation(mockFind);
+      jest.spyOn(ChatModel, 'find').mockImplementation(mockFind);
     
       const response = await supertest(app)
         .get('/chats/messages/unread')
@@ -216,7 +216,7 @@ describe('CHAT ROUTES', () => {
     });    
 
     it('should return 200 with empty array when user has no unread messages', async () => {
-      await Chat.updateMany(
+      await ChatModel.updateMany(
         { participants: userId },
         { $set: { 'messages.$[].read': userId } }
       );
@@ -239,7 +239,7 @@ describe('CHAT ROUTES', () => {
 
   describe('GET /chats/:chatId', () => {
     it('should get chat messages successfully and sort them correctly', async () => {
-      await Chat.findByIdAndUpdate(mockChat._id, {
+      await ChatModel.findByIdAndUpdate(mockChat._id, {
         $push: {
           messages: {
             sender: new Types.ObjectId(userId),
@@ -263,7 +263,7 @@ describe('CHAT ROUTES', () => {
       expect(messages[1].content).toBe('Hello!');
       expect(new Date(messages[0].timestamp).getTime()).toBeLessThan(new Date(messages[1].timestamp).getTime());
       
-      messages.forEach((message: Message) => {
+      messages.forEach((message: FormattedMessage) => {
         expect(message).toHaveProperty('messageId');
         expect(message).toHaveProperty('content');
         expect(message).toHaveProperty('sender');
@@ -301,7 +301,7 @@ describe('CHAT ROUTES', () => {
         populate: mockPopulate 
       });
     
-      jest.spyOn(Chat, 'findById').mockImplementation(mockFind);
+      jest.spyOn(ChatModel, 'findById').mockImplementation(mockFind);
     
       const response = await supertest(app)
         .get(`/chats/${mockChat._id}`)

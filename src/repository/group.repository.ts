@@ -1,5 +1,5 @@
-import { Chat, IChat } from '../models/chat.model';
-import { Group, IGroup } from '../models/group.model';
+import { ChatModel, Chat } from '../models/chat.model';
+import { GroupModel, IGroup } from '../models/group.model';
 import { User } from '../models/user.model';
 import { Types } from 'mongoose';
 
@@ -8,7 +8,7 @@ export const createAndSaveGroup = async (
   userId: Types.ObjectId,
 ): Promise<IGroup> => {
   try {
-    const group: IGroup = await Group.create({
+    const group: IGroup = await GroupModel.create({
       name: groupData.name,
       description: groupData.description,
       creator: userId,
@@ -25,7 +25,7 @@ export const createAndSaveGroup = async (
     };
     
     await Promise.all([
-      Chat.create(chatData),
+      ChatModel.create(chatData),
       User.updateMany(
         { _id: { $in: [...groupData.members, userId] }},
         { $push: { groups: group._id }}
@@ -40,7 +40,7 @@ export const createAndSaveGroup = async (
 
 export const joinUserToGroup = async (groupId: Types.ObjectId, userId: Types.ObjectId): Promise<IGroup | null> => {
   try {
-    const group: IGroup | null = await Group.findByIdAndUpdate(
+    const group: IGroup | null = await GroupModel.findByIdAndUpdate(
       groupId,
       { $addToSet: { members: userId } },
       { new: true }
@@ -52,7 +52,7 @@ export const joinUserToGroup = async (groupId: Types.ObjectId, userId: Types.Obj
 
     await Promise.all([
       User.findByIdAndUpdate(userId, { $addToSet: { groups: groupId } }),
-      Chat.findOneAndUpdate({ groupId: groupId }, { $addToSet: { participants: userId } })
+      ChatModel.findOneAndUpdate({ groupId: groupId }, { $addToSet: { participants: userId } })
     ]);
     
     return group;

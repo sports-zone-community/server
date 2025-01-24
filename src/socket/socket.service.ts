@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { Chat, IChat } from '../models/chat.model';
+import { ChatModel, Chat } from '../models/chat.model';
 import { Types } from 'mongoose';
 import { User } from '../models/user.model';
 import { IMessage } from '../models/message.model';
@@ -52,7 +52,7 @@ export class SocketService {
   private handleAuthentication(socket: Socket) {
     socket.on('authenticate', async ({ token }: { token: string }) => {
       try {
-        const userId = await this.authenticateToken(token);
+        const userId: string = await this.authenticateToken(token);
         this.authenticatedSockets.set(socket.id, userId);
         await this.joinUserRooms(socket, userId);
         socket.emit('authenticated', { success: true });
@@ -108,13 +108,13 @@ export class SocketService {
       try {
         const from = this.getUserId(socket);
         
-        let chat: IChat | null = await Chat.findOne({
+        let chat: Chat | null = await ChatModel.findOne({
           participants: { $all: [from, to] },
           isGroupChat: false
-        }) as IChat;
+        }) as Chat;
 
         if (!chat) {
-          chat = await Chat.create({
+          chat = await ChatModel.create({
             participants: [from, to],
             isGroupChat: false,
             messages: []
@@ -169,11 +169,11 @@ export class SocketService {
       try {
         const from = this.getUserId(socket);
         
-        const chat: IChat | null = await Chat.findOne({ 
+        const chat: Chat | null = await ChatModel.findOne({ 
           groupId, 
           isGroupChat: true,
           participants: from
-        }) as IChat;
+        }) as Chat;
         
         if (!chat) {
           throw new Error('Chat not found or user not authorized');
@@ -248,7 +248,7 @@ export class SocketService {
       try {
         const userId = this.getUserId(socket);
         
-        const chat = await Chat.findOne({
+        const chat = await ChatModel.findOne({
           _id: chatId,
           participants: userId
         });
@@ -265,7 +265,7 @@ export class SocketService {
         console.log(`User ${userId} entered chat ${chatId}`);
 
         try {
-          await Chat.updateMany(
+          await ChatModel.updateMany(
             { _id: chatId },
             {
               $addToSet: {
@@ -310,7 +310,7 @@ export class SocketService {
         socket.join(groupRoom);
         console.log(`User ${userId} joined group ${groupId}`);
         
-        const groupChat = await Chat.findOne({ groupId, isGroupChat: true });
+        const groupChat = await ChatModel.findOne({ groupId, isGroupChat: true });
         if (groupChat) {
           socket.emit('group:joined', {
             success: true,

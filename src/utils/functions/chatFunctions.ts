@@ -1,9 +1,9 @@
 import { PopulatedChat, PopulatedMessage, PopulatedUser } from '../interfaces/Populated';
 import { Types } from 'mongoose';
 import { PopulatedGroup } from '../interfaces/Populated';
-import { Chat, Message } from '../interfaces/chat';
+import { FormattedChat, FormattedMessage } from '../interfaces/chat';
   
-export const processChatsData = (chats: PopulatedChat[], userId: string): Chat[] => {
+export const processChatsData = (chats: PopulatedChat[], userId: string): FormattedChat[] => {
     return chats.map((chat: PopulatedChat) => {
       const lastMessage: PopulatedMessage = chat.messages[chat.messages.length - 1];
       const unreadCount: number = getUnreadCount(chat.messages, userId);
@@ -19,7 +19,7 @@ export const processChatsData = (chats: PopulatedChat[], userId: string): Chat[]
     });
   };
 
-  export const getUnreadChats = (chatsWithUnread: PopulatedChat[], userId: string): Chat[] => {
+  export const getUnreadChats = (chatsWithUnread: PopulatedChat[], userId: string): FormattedChat[] => {
     return chatsWithUnread.map((chat: PopulatedChat) => {
       const unreadMsgs = chat.messages.filter(
         (msg: PopulatedMessage) => !msg.read.includes(new Types.ObjectId(userId)) && 
@@ -39,7 +39,7 @@ export const processChatsData = (chats: PopulatedChat[], userId: string): Chat[]
   };
 
 
-  export const sortMessages = (messages: PopulatedMessage[], userId: string): Message[] => {
+  export const sortMessages = (messages: PopulatedMessage[], userId: string): FormattedMessage[] => {
     if (!messages || messages.length === 0) return [];
     
     return messages
@@ -65,7 +65,7 @@ export const processChatsData = (chats: PopulatedChat[], userId: string): Chat[]
       }));
   };
   
-  export const formatChat = (chat: PopulatedChat, userId: Types.ObjectId, messages: Message[]): Chat => {
+  export const formatChat = (chat: PopulatedChat, userId: Types.ObjectId, messages: FormattedMessage[]): FormattedChat => {
     return {
       chatId: chat._id as string,
       isGroupChat: chat.isGroupChat,
@@ -95,7 +95,7 @@ const getChatName = (chat: PopulatedChat, userId: string): string | undefined =>
       : (chat.participants.find((p: PopulatedUser) => p._id.toString() !== userId)?.fullName);
 
   
-const formatLastMessage = (message: PopulatedMessage, userId: string): Message => {
+const formatLastMessage = (message: PopulatedMessage, userId: string): FormattedMessage => {
     return {
       messageId: message._id.toString(),
       content: message.content,

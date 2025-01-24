@@ -2,9 +2,9 @@ import { Types } from 'mongoose';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import app from '../../app';
-import { Group } from '../../models/group.model';
+import { GroupModel } from '../../models/group.model';
 import { User } from '../../models/user.model';
-import { Chat } from '../../models/chat.model';
+import { ChatModel } from '../../models/chat.model';
 import { createUser } from '../../utils/functions/testFunctions/testFunctions';
 
 describe('GROUP ROUTES', () => {
@@ -40,8 +40,8 @@ describe('GROUP ROUTES', () => {
       expect(response.body.name).toBe(mockGroup.name);
       expect(response.body.description).toBe(mockGroup.description);
       
-      const group = await Group.findById(response.body._id);
-      const chat = await Chat.findOne({ groupId: response.body._id });
+      const group = await GroupModel.findById(response.body._id);
+      const chat = await ChatModel.findOne({ groupId: response.body._id });
       const user = await User.findById(mockGroup.creatorId);
       
       expect(group).toBeTruthy();
@@ -64,7 +64,7 @@ describe('GROUP ROUTES', () => {
     });
 
     it('should return 500 on database error', async () => {
-      jest.spyOn(Group, 'create').mockRejectedValue(new Error('Database error'));
+      jest.spyOn(GroupModel, 'create').mockRejectedValue(new Error('Database error'));
 
       const response = await supertest(app)
         .post('/groups')
@@ -101,7 +101,7 @@ describe('GROUP ROUTES', () => {
       token = loginResponse.token;
       userId = loginResponse.userId;
 
-      mockGroup = await Group.create({
+      mockGroup = await GroupModel.create({
         name: 'Test Group',
         description: 'Test Description',
         creator: new Types.ObjectId(),
@@ -109,7 +109,7 @@ describe('GROUP ROUTES', () => {
         admins: [new Types.ObjectId()]
       });
 
-      mockChat = await Chat.create({
+      mockChat = await ChatModel.create({
         isGroupChat: true,
         groupId: mockGroup._id,
         groupName: mockGroup.name,
@@ -125,8 +125,8 @@ describe('GROUP ROUTES', () => {
 
       expect(response.status).toBe(StatusCodes.OK);
       
-      const updatedGroup = await Group.findById(mockGroup._id);
-      const updatedChat = await Chat.findById(mockChat._id);
+      const updatedGroup = await GroupModel.findById(mockGroup._id);
+      const updatedChat = await ChatModel.findById(mockChat._id);
       const updatedUser = await User.findById(userId);
 
       expect(updatedGroup?.members.map(id => id.toString())).toContain(userId.toString());
@@ -160,7 +160,7 @@ describe('GROUP ROUTES', () => {
 
     it('should return 500 on database error', async () => {
 
-      jest.spyOn(Group, 'findByIdAndUpdate').mockRejectedValue(new Error('Database error'));
+      jest.spyOn(GroupModel, 'findByIdAndUpdate').mockRejectedValue(new Error('Database error'));
 
       const response = await supertest(app)
         .post(`/groups/${mockGroup._id}/join`)
@@ -174,7 +174,7 @@ describe('GROUP ROUTES', () => {
 
     it('should return 404 when group is not found', async () => {
 
-      jest.spyOn(Group, 'findByIdAndUpdate').mockResolvedValue(null);
+      jest.spyOn(GroupModel, 'findByIdAndUpdate').mockResolvedValue(null);
 
       const response = await supertest(app)
         .post(`/groups/${mockGroup._id}/join`)

@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { IChat } from '../../models/chat.model';
+import { Chat } from '../../models/chat.model';
 
 export interface PopulatedUser {
     _id: Types.ObjectId;
@@ -20,7 +20,7 @@ export interface PopulatedMessage {
     read: Types.ObjectId[];
  }
 
- export interface PopulatedChat extends Omit<IChat, 'participants' | 'groupId' | 'messages' | 'lastMessage'> {
+ export interface PopulatedChat extends Omit<Chat, 'participants' | 'groupId' | 'messages' | 'lastMessage'> {
     participants: PopulatedUser[];
     groupId: PopulatedGroup;
     messages: PopulatedMessage[];

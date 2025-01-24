@@ -7,7 +7,7 @@ import { logStartFunction, logEndFunction, logError } from '../utils/utils';
 import { formatChat, getUnreadChats, processChatsData, sortMessages } from '../utils/functions/chatFunctions';
 import { fetchUserChats, markMessagesAsReaded, getUnreadMsg, getChatById } from '../repository/chat.repository';
 import { getChatMessagesSchema } from '../validations/chat.validation';
-import { Chat, Message } from '../utils/interfaces/chat';
+import { FormattedChat, FormattedMessage } from '../utils/interfaces/chat';
 
 export const getUserChats = async (req: Request, res: Response) => {
   logStartFunction('getUserChats');
@@ -15,7 +15,7 @@ export const getUserChats = async (req: Request, res: Response) => {
 
   try {
     const chats: PopulatedChat[] = await fetchUserChats(new Types.ObjectId(userId));
-    const processedChats: Chat[] = processChatsData(chats, userId!);
+    const processedChats: FormattedChat[] = processChatsData(chats, userId!);
 
     logEndFunction('getUserChats');
     res.status(StatusCodes.OK).json(processedChats);
@@ -55,7 +55,7 @@ export const getUnreadMessages = async (req: Request, res: Response) => {
 
   try {
     const chatsWithUnread: PopulatedChat[] = await getUnreadMsg(new Types.ObjectId(userId));
-    const unreadMessages: Chat[] = getUnreadChats(chatsWithUnread, userId!);
+    const unreadMessages: FormattedChat[] = getUnreadChats(chatsWithUnread, userId!);
 
     logEndFunction('getUnreadMessages');
     res.status(StatusCodes.OK).json(unreadMessages);
@@ -83,7 +83,7 @@ export const getChatMessages = async (req: Request, res: Response) => {
       return;
     }
 
-    const sortedMessages: Message[] = sortMessages(chat.messages, userId!);
+    const sortedMessages: FormattedMessage[] = sortMessages(chat.messages, userId!);
 
     await markMessagesAsReaded(new Types.ObjectId(chatId), new Types.ObjectId(userId));
 
