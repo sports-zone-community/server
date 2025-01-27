@@ -13,12 +13,15 @@ export const validationMiddleware =
     const { bodySchema, paramsSchema } = schemas;
 
     if (bodySchema) {
-      const { error }: Joi.ValidationResult = bodySchema.validate(req.body);
-      next(error && new BadRequestError(error.message));
+      return validateSchema(bodySchema, req.body, next);
     }
 
     if (paramsSchema) {
-      const { error }: Joi.ValidationResult = paramsSchema.validate(req.params);
-      next(error && new BadRequestError(error.message));
+      return validateSchema(paramsSchema, req.params, next);
     }
   };
+
+const validateSchema = <T>(schema: Joi.Schema<T>, input: T, next: NextFunction) => {
+  const { error }: Joi.ValidationResult = schema.validate(input);
+  return next(error && new BadRequestError(error.message));
+};
