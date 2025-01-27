@@ -1,5 +1,5 @@
 import Joi, { ObjectSchema } from 'joi';
-import { User } from '../../models';
+import { User } from '../models';
 
 export type RegisterObject = Omit<User, 'tokens'>;
 

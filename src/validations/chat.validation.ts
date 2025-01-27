@@ -1,5 +1,4 @@
 import Joi from 'joi';
+import { mongoIdSchema } from './common.validation';
 
-export const getChatMessagesSchema = Joi.object({
-    chatId: Joi.string().required().hex().length(24)
-  });
+export const getChatMessagesSchema = Joi.object({ chatId: mongoIdSchema });

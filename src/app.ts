@@ -1,11 +1,9 @@
 import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import { authRouter } from './routes';
+import { authRouter, chatRouter, groupRouter, postRouter } from './routes';
 import cors from 'cors';
-import { errorMiddleware, loggerMiddleware } from './middlewares';
-import { chatRouter } from './routes/chat.router';
-import { groupRouter } from './routes/group.router';
+import { authMiddleware, errorMiddleware, loggerMiddleware } from './middlewares';
 
 dotenv.config();
 
@@ -25,7 +23,6 @@ app.use(loggerMiddleware);
 app.use('/auth', authRouter);
 app.use('/chats', chatRouter);
 app.use('/groups', groupRouter);
-
-app.use('/auth', authRouter);
+app.use('/posts', authMiddleware, postRouter);
 
 app.use(errorMiddleware);

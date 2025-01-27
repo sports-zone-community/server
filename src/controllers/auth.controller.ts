@@ -12,21 +12,12 @@ import {
 } from '../utils';
 import { OAuth2Client } from 'google-auth-library';
 import { createUser, getUserByFilters, getUserById, updateUser } from '../repositories';
-import {
-  LoginObject,
-  loginSchema,
-  RegisterObject,
-  registerSchema,
-} from '../validations/schemas/auth.schemas';
-import { validateSchema } from '../validations/schema.validation';
+import { LoginObject, RegisterObject } from '../validations/auth.validation';
 import { StatusCodes } from 'http-status-codes';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password, username, fullName }: RegisterObject = validateSchema(
-      registerSchema,
-      req,
-    );
+    const { email, password, username, fullName }: RegisterObject = req.body as RegisterObject;
 
     const user: UserDocument | null = await UserModel.findOne({ $or: [{ email }, { username }] });
     if (user) {
@@ -45,7 +36,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password }: LoginObject = validateSchema(loginSchema, req);
+    const { email, password }: LoginObject = req.body as LoginObject;
 
     const user: UserDocument = await getUserByFilters({ email });
     await verifyPassword(password, user.password);
