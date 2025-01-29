@@ -5,7 +5,9 @@ import { PostController } from '../controllers';
 
 export const postRouter: Router = Router();
 
-postRouter.get('/likes', PostController.getLikedPosts);
+postRouter.get('/liked', PostController.getLikedPosts);
+
+postRouter.get('/own', PostController.getOwnPosts);
 
 postRouter.get(
   '/:postId',
@@ -42,4 +44,3 @@ postRouter.post(
   validationMiddleware({ paramsSchema: postIdSchema }),
   PostController.unlikePost,
 );
-

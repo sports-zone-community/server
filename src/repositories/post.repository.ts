@@ -52,3 +52,6 @@ export const unlikePost = async (postId: string, userId: string): Promise<PostDo
 
 export const getLikedPosts = async (userId: string): Promise<PostDocument[]> =>
   await PostModel.find({ likes: { $in: [getObjectId(userId)] } });
+
+export const getOwnPosts = async (userId: string): Promise<PostDocument[]> =>
+  await PostModel.find({ userId: getObjectId(userId) });

@@ -88,3 +88,10 @@ export const getLikedPosts = async (req: Request, res: Response) => {
 
   res.status(StatusCodes.OK).json(likedPosts);
 };
+
+export const getOwnPosts = async (req: Request, res: Response) => {
+  const { id }: LoggedUser = req.user;
+  const ownPosts: PostDocument[] = await PostRepository.getOwnPosts(id);
+
+  res.status(StatusCodes.OK).json(ownPosts);
+};
