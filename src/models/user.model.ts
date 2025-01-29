@@ -1,4 +1,4 @@
-import { model, Model, Schema, Document } from 'mongoose';
+import { Document, Model, model, Schema } from 'mongoose';
 
 // TODO: User should have an array of groups and an array of chats he is in?
 
@@ -17,6 +17,7 @@ const userSchema = new Schema<UserDocument>({
   username: {
     type: String,
     required: true,
+    unique: [true, 'Username is already taken'],
   },
   password: {
     type: String,
@@ -25,6 +26,7 @@ const userSchema = new Schema<UserDocument>({
   email: {
     type: String,
     required: true,
+    unique: [true, 'Email is already taken'],
   },
   fullName: {
     type: String,
@@ -34,10 +36,12 @@ const userSchema = new Schema<UserDocument>({
     type: [String],
     default: [],
   },
-  groups: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Group'
-  }]
+  groups: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Group',
+    },
+  ],
 });
 
 export const UserModel: Model<UserDocument> = model<UserDocument>('User', userSchema);
