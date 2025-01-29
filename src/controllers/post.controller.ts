@@ -12,9 +12,11 @@ export const createPost = async (req: Request, res: Response) => {
   const { content, image, groupId }: CreatePostObject = req.body as CreatePostObject;
 
   // TODO: Should be group repo function
-  const group: GroupDocument = assertExists(await GroupModel.findById(groupId), 'Group');
-  if (!group.members.includes(getObjectId(id))) {
-    throw new BadRequestError('Cannot upload a post to a group that the user is not a part of');
+  if (groupId) {
+    const group: GroupDocument = assertExists(await GroupModel.findById(groupId), 'Group');
+    if (!group.members.includes(getObjectId(id))) {
+      throw new BadRequestError('Cannot upload a post to a group that the user is not a part of');
+    }
   }
 
   const post: PostDocument = await PostRepository.createPost({

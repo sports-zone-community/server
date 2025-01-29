@@ -7,7 +7,7 @@ export type CreatePostObject = Omit<Post, 'userId' | 'likes'>;
 export const createPostSchema: Joi.ObjectSchema<CreatePostObject> = Joi.object({
   image: Joi.string().required(),
   content: Joi.string().min(3).max(255).required(),
-  groupId: mongoIdSchema,
+  groupId: mongoIdSchema.optional(),
 });
 
 export type UpdatePostObject = Partial<Pick<Post, 'content' | 'image'>>;
