@@ -1,5 +1,5 @@
 import { NotFoundError } from '../errors';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export const assertExists = <T extends Document>(document: T | null, docType: string): T => {
   if (!document) {
@@ -8,3 +8,5 @@ export const assertExists = <T extends Document>(document: T | null, docType: st
 
   return document;
 };
+
+export const getObjectId = (id: string): Types.ObjectId => new Types.ObjectId(id);

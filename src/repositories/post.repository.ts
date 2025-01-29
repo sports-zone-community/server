@@ -1,18 +1,12 @@
 import { Post, PostDocument, PostModel } from '../models';
-import { InternalServerError } from '../utils';
-import { assertExists } from '../utils/functions/common.functions';
-import { FilterQuery, Types } from 'mongoose';
+import { assertExists, getObjectId } from '../utils/functions/common.functions';
+import { FilterQuery } from 'mongoose';
 import { UpdatePostObject } from '../validations/post.validation';
 
 const docType: string = 'Post';
 
-export const createPost = async (post: Partial<Post>): Promise<PostDocument> => {
-  try {
-    return await PostModel.create(post);
-  } catch (error: any) {
-    throw new InternalServerError(error.message);
-  }
-};
+export const createPost = async (post: Partial<Post>): Promise<PostDocument> =>
+  await PostModel.create(post);
 
 export const getPostById = async (id: string): Promise<PostDocument> =>
   assertExists((await PostModel.findById(id)) as PostDocument, docType);
@@ -57,4 +51,4 @@ export const unlikePost = async (postId: string, userId: string): Promise<PostDo
   );
 
 export const getLikedPosts = async (userId: string): Promise<PostDocument[]> =>
-  await PostModel.find({ likes: { $in: [new Types.ObjectId(userId)] } });
+  await PostModel.find({ likes: { $in: [getObjectId(userId)] } });
