@@ -1,14 +1,14 @@
-import { ChatModel } from '../models/chat.model';
-import { GroupModel, IGroup } from '../models/group.model';
-import { UserModel } from '../models';
+import { ChatModel, GroupModel, GroupDocument, UserModel } from '../models';
 import { Types } from 'mongoose';
+
+// TODO: Fix this repository
 
 export const createAndSaveGroup = async (
   groupData: { name: string; description: string; members: Types.ObjectId[] },
   userId: Types.ObjectId,
-): Promise<IGroup> => {
+): Promise<GroupDocument> => {
   try {
-    const group: IGroup = await GroupModel.create({
+    const group: GroupDocument = await GroupModel.create({
       name: groupData.name,
       description: groupData.description,
       creator: userId,
@@ -41,9 +41,9 @@ export const createAndSaveGroup = async (
 export const joinUserToGroup = async (
   groupId: Types.ObjectId,
   userId: Types.ObjectId,
-): Promise<IGroup | null> => {
+): Promise<GroupDocument | null> => {
   try {
-    const group: IGroup | null = await GroupModel.findByIdAndUpdate(
+    const group: GroupDocument | null = await GroupModel.findByIdAndUpdate(
       groupId,
       { $addToSet: { members: userId } },
       { new: true },

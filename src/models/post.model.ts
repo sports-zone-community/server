@@ -5,7 +5,7 @@ export interface Post {
   image: string;
   userId: Types.ObjectId;
   groupId: Types.ObjectId;
-  likes: { user: Types.ObjectId }[];
+  likes: Types.ObjectId[];
 }
 
 export type PostDocument = Post & Document;
@@ -16,7 +16,7 @@ const postSchema = new Schema<PostDocument>(
     image: { type: String, required: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
     groupId: { type: Schema.Types.ObjectId, ref: 'Group', required: true },
-    likes: { type: [{ user: { type: Schema.Types.ObjectId, ref: 'User' } }], default: [] },
+    likes: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
   },
   { timestamps: true },
 );

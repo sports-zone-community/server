@@ -3,7 +3,7 @@ import { Secret, sign, verify } from 'jsonwebtoken';
 import { BadRequestError, UnauthorizedError } from './errors';
 import { compare } from 'bcryptjs';
 import { UserDocument } from '../models';
-import { updateUser } from '../repositories';
+import { UserRepository } from '../repositories';
 import { TokenPayload, Tokens } from './types';
 
 export const getAuthHeader = (req: Request): string => {
@@ -47,7 +47,7 @@ export const verifyPassword = async (password: string, hashedPassword: string) =
 
 export const validateToken = async (user: UserDocument, token: string) => {
   if (!user.tokens.includes(token)) {
-    await updateUser(user.id, { tokens: [] });
+    await UserRepository.updateUser(user.id, { tokens: [] });
     throw new UnauthorizedError('Token not found');
   }
 };
