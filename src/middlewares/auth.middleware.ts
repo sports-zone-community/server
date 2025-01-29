@@ -9,7 +9,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   next();
 };
 
-export const requireAccessToken = (req: Request, res: Response, next: NextFunction): void => {
+export const verifyRefreshToken = (req: Request, res: Response, next: NextFunction): void => {
   const token: string = getAuthHeader(req);
   const { userId }: TokenPayload = verifyToken(token, true);
 

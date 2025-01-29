@@ -30,13 +30,11 @@ export const signTokens = (userId: string): Tokens => {
   return { accessToken, refreshToken };
 };
 
-export const verifyToken = (token: string, isAccessToken = false): TokenPayload => {
+export const verifyToken = (token: string, isRefresh = false): TokenPayload => {
   try {
     return verify(
       token,
-      (isAccessToken
-        ? process.env.ACCESS_TOKEN_SECRET
-        : process.env.REFRESH_TOKEN_SECRET) as Secret,
+      (isRefresh ? process.env.REFRESH_TOKEN_SECRET : process.env.ACCESS_TOKEN_SECRET) as Secret,
     ) as TokenPayload;
   } catch (error: unknown) {
     throw new UnauthorizedError(`Invalid token`);
