@@ -8,3 +8,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   req.user = { id: userId, token };
   next();
 };
+
+export const requireAccessToken = (req: Request, res: Response, next: NextFunction): void => {
+  const token: string = getAuthHeader(req);
+  const { userId }: TokenPayload = verifyToken(token, true);
+
+  req.user = { id: userId, token };
+  next();
+};
