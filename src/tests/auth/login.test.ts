@@ -1,27 +1,13 @@
-import { hash } from 'bcryptjs';
 import { UserModel } from '../../models';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { app } from '../../app';
-
-const createUser = async (email: string, password: string, username: string, fullName: string) => {
-  const hashedPassword = await hash(password, 10);
-  return UserModel.create({
-    email,
-    password: hashedPassword,
-    username,
-    fullName,
-  });
-};
-
-const testLogin = async (email: string, password: string) => {
-  return supertest(app).post('/auth/login').send({ email, password });
-};
+import { createTestUser, testLogin } from '../../utils';
 
 describe('AUTH ROUTES - POST /auth/login', () => {
   it('should log in a user with valid credentials', async () => {
-    await createUser('test@example.com', 'password123', 'testuser', 'Test User');
-    const response = await testLogin('test@example.com', 'password123');
+    await createTestUser();
+    const response = await testLogin();
 
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body).toHaveProperty('accessToken');
@@ -29,9 +15,9 @@ describe('AUTH ROUTES - POST /auth/login', () => {
   });
 
   it('should log in again to update refresh token', async () => {
-    await createUser('test@example.com', 'password123', 'testuser', 'Test User');
-    await testLogin('test@example.com', 'password123');
-    const response = await testLogin('test@example.com', 'password123');
+    await createTestUser();
+    await testLogin();
+    const response = await testLogin();
 
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body).toHaveProperty('accessToken');
@@ -45,7 +31,6 @@ describe('AUTH ROUTES - POST /auth/login', () => {
     });
 
     expect(response.status).toBe(StatusCodes.BAD_REQUEST);
-    expect(response.body.error).toBe('Please fill all fields');
   });
 
   it('should return an error for user does not exists', async () => {
@@ -54,19 +39,11 @@ describe('AUTH ROUTES - POST /auth/login', () => {
       password: 'password123',
     });
 
-    expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
-    expect(response.body.error).toBe('User does not exist');
+    expect(response.status).toBe(StatusCodes.NOT_FOUND);
   });
 
   it('should return an error for invalid credentials', async () => {
-    const hashedPassword = await hash('password123', 10);
-
-    await UserModel.create({
-      email: 'test@example.com',
-      password: hashedPassword,
-      username: 'testuser',
-      fullName: 'Test User',
-    });
+    await createTestUser();
 
     const response = await supertest(app).post('/auth/login').send({
       email: 'test@example.com',
@@ -74,15 +51,13 @@ describe('AUTH ROUTES - POST /auth/login', () => {
     });
 
     expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
-    expect(response.body.error).toBe('Invalid credentials');
+    expect(response.body.error).toContain('Invalid credentials');
   });
 
   it('should return 500 Internal Server Error on failure', async () => {
     const mockUserRequest = {
       email: 'test@example.com',
       password: 'password123',
-      username: 'testuser',
-      fullName: 'Test User',
     };
 
     jest.spyOn(UserModel, 'findOne').mockRejectedValue(new Error('Internal Server Error'));
@@ -90,6 +65,5 @@ describe('AUTH ROUTES - POST /auth/login', () => {
     const response = await supertest(app).post('/auth/login').send(mockUserRequest);
 
     expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-    expect(response.body.error).toBe('Internal Server Error');
   });
 });

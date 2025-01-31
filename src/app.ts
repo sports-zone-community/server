@@ -1,21 +1,16 @@
 import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import { authRouter, chatRouter, groupRouter, postRouter } from './routes';
 import cors from 'cors';
+import { authRouter, chatRouter, groupRouter, postRouter } from './routes';
 import { authMiddleware, errorMiddleware, loggerMiddleware } from './middlewares';
+import { getCorsOptions } from './utils';
 
 dotenv.config();
 
 export const app: Application = express();
 
-const corsOptions = {
-  origin: '*',
-  methods: ['GET', 'POST'],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+app.use(cors(getCorsOptions()));
 
 app.use(bodyParser.json());
 

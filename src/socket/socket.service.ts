@@ -1,13 +1,21 @@
 import { Server, Socket } from 'socket.io';
-import { ChatModel, Chat } from '../models/chat.model';
+import { Chat, ChatModel, IMessage, UserModel } from '../models';
 import { Types } from 'mongoose';
-import { IMessage } from '../models/message.model';
-import { verify } from 'jsonwebtoken';
-import { Secret } from 'jsonwebtoken';
-import { UserModel } from '../models';
+import { Secret, verify } from 'jsonwebtoken';
+import { config } from '../config/config';
+
 export class SocketService {
+  private static readonly TIME_FORMAT_OPTIONS = {
+    hour: '2-digit',
+    minute: '2-digit',
+  } as const;
+  private static readonly LOCALE = 'he-IL';
   private activeChats: Map<string, Set<string>> = new Map();
   private authenticatedSockets: Map<string, string> = new Map();
+
+  constructor(private io: Server) {
+    this.setupSocketHandlers();
+  }
 
   private async authenticateToken(token: string): Promise<string> {
     try {
@@ -15,29 +23,18 @@ export class SocketService {
         throw new Error('No token provided');
       }
 
-      const secret: Secret = process.env.ACCESS_TOKEN_SECRET as Secret;
+      const secret: Secret = config.jwt.accessTokenSecret;
       const decoded = verify(token, secret) as { id: string };
       return decoded.id;
     } catch (error) {
       throw new Error('Invalid token');
     }
   }
-  
-  private static readonly TIME_FORMAT_OPTIONS = {
-    hour: '2-digit',
-    minute: '2-digit'
-  } as const;
-  
-  private static readonly LOCALE = 'he-IL';
-
-  constructor(private io: Server) {
-    this.setupSocketHandlers();
-  }
 
   private setupSocketHandlers() {
     this.io.on('connection', async (socket: Socket) => {
       console.log('Socket connected:', socket.id);
-      
+
       this.handleAuthentication(socket);
 
       this.handlePrivateMessage(socket);
@@ -58,9 +55,9 @@ export class SocketService {
         socket.emit('authenticated', { success: true });
       } catch (error) {
         console.error('Authentication error:', error);
-        socket.emit('authenticated', { 
-          success: false, 
-          error: 'Authentication failed' 
+        socket.emit('authenticated', {
+          success: false,
+          error: 'Authentication failed',
         });
       }
     });
@@ -97,33 +94,30 @@ export class SocketService {
   }
 
   private formatMessageTime(timestamp: Date): string {
-    return timestamp.toLocaleTimeString(
-      SocketService.LOCALE, 
-      SocketService.TIME_FORMAT_OPTIONS
-    );
+    return timestamp.toLocaleTimeString(SocketService.LOCALE, SocketService.TIME_FORMAT_OPTIONS);
   }
 
   private handlePrivateMessage(socket: Socket) {
     socket.on('private message', async ({ content, to, senderName }) => {
       try {
         const from = this.getUserId(socket);
-        
-        let chat: Chat | null = await ChatModel.findOne({
+
+        let chat: Chat | null = (await ChatModel.findOne({
           participants: { $all: [from, to] },
-          isGroupChat: false
-        }) as Chat;
+          isGroupChat: false,
+        })) as Chat;
 
         if (!chat) {
           chat = await ChatModel.create({
             participants: [from, to],
             isGroupChat: false,
-            messages: []
+            messages: [],
           });
         }
 
         const chatId = chat._id as string;
         const isRecipientActive = this.activeChats.get(chatId)?.has(to);
-        
+
         const read = [new Types.ObjectId(from)];
         if (isRecipientActive) {
           read.push(new Types.ObjectId(to));
@@ -133,7 +127,7 @@ export class SocketService {
           sender: new Types.ObjectId(from),
           content,
           timestamp: new Date(),
-          read
+          read,
         };
 
         chat.messages.push(message as IMessage);
@@ -144,8 +138,8 @@ export class SocketService {
           chatId: chat._id,
           message: {
             ...message,
-            formattedTime: this.formatMessageTime(message.timestamp)
-          }
+            formattedTime: this.formatMessageTime(message.timestamp),
+          },
         });
         console.log('Emitting unread message to:', to);
 
@@ -154,7 +148,7 @@ export class SocketService {
             chatId: chat._id,
             from,
             senderName,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
       } catch (error) {
@@ -168,22 +162,22 @@ export class SocketService {
     socket.on('group message', async ({ content, groupId, senderName }) => {
       try {
         const from = this.getUserId(socket);
-        
-        const chat: Chat | null = await ChatModel.findOne({ 
-          groupId, 
+
+        const chat: Chat | null = (await ChatModel.findOne({
+          groupId,
           isGroupChat: true,
-          participants: from
-        }) as Chat;
-        
+          participants: from,
+        })) as Chat;
+
         if (!chat) {
           throw new Error('Chat not found or user not authorized');
         }
 
         const chatId = chat._id as string;
         const activeUsers = this.activeChats.get(chatId) || new Set();
-        
+
         const read = [new Types.ObjectId(from)];
-        
+
         chat.participants.forEach((participantId: Types.ObjectId) => {
           const participantStringId = participantId.toString();
           if (activeUsers.has(participantStringId) && participantStringId !== from) {
@@ -196,7 +190,7 @@ export class SocketService {
           senderName,
           content,
           timestamp: new Date(),
-          read
+          read,
         };
 
         chat.messages.push(message as IMessage);
@@ -208,13 +202,13 @@ export class SocketService {
           content: message.content,
           timestamp: message.timestamp,
           read: message.read,
-          formattedTime: this.formatMessageTime(message.timestamp)
+          formattedTime: this.formatMessageTime(message.timestamp),
         };
         console.log('Emitting new message to group:', `group:${groupId}`);
 
         socket.to(`group:${groupId}`).emit('new message', {
           chatId: chat._id,
-          message: formattedMessage
+          message: formattedMessage,
         });
 
         chat.participants.forEach((participantId: Types.ObjectId) => {
@@ -224,11 +218,10 @@ export class SocketService {
               chatId: chat._id,
               from,
               senderName,
-              timestamp: new Date()
+              timestamp: new Date(),
             });
           }
         });
-
       } catch (error) {
         console.error('Error handling group message:', error);
         socket.emit('error', { message: 'Authentication failed' });
@@ -247,12 +240,12 @@ export class SocketService {
     socket.on('enterChat', async ({ chatId }) => {
       try {
         const userId = this.getUserId(socket);
-        
+
         const chat = await ChatModel.findOne({
           _id: chatId,
-          participants: userId
+          participants: userId,
         });
-        
+
         if (!chat) {
           throw new Error('Chat not found or user not authorized');
         }
@@ -261,7 +254,7 @@ export class SocketService {
           this.activeChats.set(chatId, new Set());
         }
         this.activeChats.get(chatId)?.add(userId);
-        
+
         console.log(`User ${userId} entered chat ${chatId}`);
 
         try {
@@ -269,17 +262,17 @@ export class SocketService {
             { _id: chatId },
             {
               $addToSet: {
-                'messages.$[elem].read': new Types.ObjectId(userId)
-              }
+                'messages.$[elem].read': new Types.ObjectId(userId),
+              },
             },
             {
               arrayFilters: [
-                { 
+                {
                   'elem.sender': { $ne: userId },
-                  'elem.read': { $ne: new Types.ObjectId(userId) }
-                }
-              ]
-            }
+                  'elem.read': { $ne: new Types.ObjectId(userId) },
+                },
+              ],
+            },
           );
         } catch (error) {
           console.error('Error marking messages as read:', error);
@@ -290,14 +283,14 @@ export class SocketService {
       }
     });
 
-    socket.on('leaveChat', (data: { userId: string, chatId: string }) => {
+    socket.on('leaveChat', (data: { userId: string; chatId: string }) => {
       const { userId, chatId } = data;
       this.activeChats.get(chatId)?.delete(userId);
-      
+
       if (this.activeChats.get(chatId)?.size === 0) {
         this.activeChats.delete(chatId);
       }
-      
+
       console.log(`User ${userId} left chat ${chatId}`);
     });
   }
@@ -309,22 +302,22 @@ export class SocketService {
         const groupRoom = `group:${groupId}`;
         socket.join(groupRoom);
         console.log(`User ${userId} joined group ${groupId}`);
-        
+
         const groupChat = await ChatModel.findOne({ groupId, isGroupChat: true });
         if (groupChat) {
           socket.emit('group:joined', {
             success: true,
             groupId,
-            chatId: groupChat._id
+            chatId: groupChat._id,
           });
         }
       } catch (error) {
         console.error('Error joining group:', error);
         socket.emit('group:joined', {
           success: false,
-          error: 'Failed to join group'
+          error: 'Failed to join group',
         });
       }
     });
   }
-} 
+}
