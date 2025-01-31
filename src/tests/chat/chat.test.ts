@@ -3,7 +3,7 @@ import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { app } from '../../app';
 import { ChatModel } from '../../models/chat.model';
-import { createUser, mockPopulateMock } from '../../utils/functions/tests/test.functions';
+import { createAndLoginTestUser, mockPopulateMock } from '../../utils/tests.utils';
 import { FormattedMessage } from '../../utils/interfaces/chat';
 import { Request } from 'express';
 
@@ -14,8 +14,8 @@ describe('CHAT ROUTES', () => {
   let otherUserId: string;
 
   beforeEach(async () => {
-    const user1 = await createUser('user1@example.com');
-    const user2 = await createUser('user2@example.com');
+    const user1 = await createAndLoginTestUser('user1@example.com');
+    const user2 = await createAndLoginTestUser('user2@example.com');
     token = user1.token;
     userId = user1.userId;
     otherUserId = user2.userId;
@@ -23,20 +23,20 @@ describe('CHAT ROUTES', () => {
     mockChat = await ChatModel.create({
       participants: [userId, otherUserId],
       isGroupChat: false,
-      messages: [{
-        sender: new Types.ObjectId(otherUserId),
-        content: 'Hello!',
-        timestamp: new Date(),
-        read: []
-      }]
+      messages: [
+        {
+          sender: new Types.ObjectId(otherUserId),
+          content: 'Hello!',
+          timestamp: new Date(),
+          read: [],
+        },
+      ],
     });
   });
 
   describe('GET /chats', () => {
     it('should get user chats successfully', async () => {
-      const response = await supertest(app)
-        .get('/chats')
-        .set('Authorization', `Bearer ${token}`);
+      const response = await supertest(app).get('/chats').set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(StatusCodes.OK);
       expect(Array.isArray(response.body)).toBeTruthy();
@@ -51,38 +51,33 @@ describe('CHAT ROUTES', () => {
 
     it('should return 200 with empty array when user has no chats', async () => {
       await ChatModel.deleteMany({ participants: userId });
-      const response = await supertest(app)
-        .get('/chats')
-        .set('Authorization', `Bearer ${token}`);
+      const response = await supertest(app).get('/chats').set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body).toEqual([]);
     });
 
     it('should return 500 when get error from Database', async () => {
-      const mockPopulate: jest.Mock = jest.fn()
+      const mockPopulate: jest.Mock = jest
+        .fn()
         .mockImplementationOnce(mockPopulateMock)
         .mockImplementationOnce(mockPopulateMock)
         .mockImplementationOnce(mockPopulateMock)
-        .mockRejectedValueOnce(new Error('Database error')); 
-    
+        .mockRejectedValueOnce(new Error('Database error'));
+
       const mockFind = jest.fn().mockReturnValue({
-        populate: mockPopulate 
+        populate: mockPopulate,
       });
-    
+
       jest.spyOn(ChatModel, 'find').mockImplementation(mockFind);
-    
-      const response = await supertest(app)
-        .get('/chats')
-        .set('Authorization', `Bearer ${token}`);
-    
+
+      const response = await supertest(app).get('/chats').set('Authorization', `Bearer ${token}`);
+
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-    });    
+    });
 
     it('should return 200 with empty array when user has no chats', async () => {
       await ChatModel.deleteMany({ participants: userId });
-      const response = await supertest(app)
-        .get('/chats')
-        .set('Authorization', `Bearer ${token}`);
+      const response = await supertest(app).get('/chats').set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body).toEqual([]);
     });
@@ -105,9 +100,7 @@ describe('CHAT ROUTES', () => {
 
     it('should handle empty chats result', async () => {
       await ChatModel.deleteMany({});
-      const response = await supertest(app)
-        .get('/chats')
-        .set('Authorization', `Bearer ${token}`);
+      const response = await supertest(app).get('/chats').set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body).toEqual([]);
@@ -121,10 +114,9 @@ describe('CHAT ROUTES', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(StatusCodes.OK);
-      
+
       const updatedChat = await ChatModel.findById(mockChat._id);
-      expect(updatedChat?.messages[0].read.map(id => id.toString()))
-        .toContain(userId.toString());
+      expect(updatedChat?.messages[0].read.map((id) => id.toString())).toContain(userId.toString());
     });
 
     it('should return 400 for invalid chat ID', async () => {
@@ -145,7 +137,7 @@ describe('CHAT ROUTES', () => {
 
     it('should return 500 when chat update fails', async () => {
       jest.spyOn(ChatModel, 'updateMany').mockRejectedValueOnce(new Error('Database error'));
-      
+
       const response = await supertest(app)
         .put(`/chats/${mockChat._id}/read`)
         .set('Authorization', `Bearer ${token}`);
@@ -177,7 +169,7 @@ describe('CHAT ROUTES', () => {
 
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body.success).toBe(true);
-      
+
       // וידוא שההודעות סומנו כנקראות
       const updatedChat = await ChatModel.findById(mockChat._id);
       expect(updatedChat?.messages[0].read).toContainEqual(new Types.ObjectId(userId));
@@ -196,35 +188,36 @@ describe('CHAT ROUTES', () => {
     });
 
     it('should return 500 when get error from Database', async () => {
-      const mockPopulate: jest.Mock = jest.fn()
+      const mockPopulate: jest.Mock = jest
+        .fn()
         .mockImplementationOnce(mockPopulateMock)
         .mockImplementationOnce(mockPopulateMock)
         .mockImplementationOnce(mockPopulateMock)
-        .mockRejectedValueOnce(new Error('Database error')); 
-    
+        .mockRejectedValueOnce(new Error('Database error'));
+
       const mockFind = jest.fn().mockReturnValue({
-        populate: mockPopulate 
+        populate: mockPopulate,
       });
-    
+
       jest.spyOn(ChatModel, 'find').mockImplementation(mockFind);
-    
+
       const response = await supertest(app)
         .get('/chats/messages/unread')
         .set('Authorization', `Bearer ${token}`);
-    
+
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-    });    
+    });
 
     it('should return 200 with empty array when user has no unread messages', async () => {
       await ChatModel.updateMany(
         { participants: userId },
-        { $set: { 'messages.$[].read': userId } }
+        { $set: { 'messages.$[].read': userId } },
       );
-      
+
       const response = await supertest(app)
         .get('/chats/messages/unread')
         .set('Authorization', `Bearer ${token}`);
-      
+
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body).toEqual([]);
     });
@@ -245,9 +238,9 @@ describe('CHAT ROUTES', () => {
             sender: new Types.ObjectId(userId),
             content: 'Earlier message',
             timestamp: new Date('2024-02-20T10:00:00'),
-            read: []
-          }
-        }
+            read: [],
+          },
+        },
       });
 
       const response = await supertest(app)
@@ -257,12 +250,14 @@ describe('CHAT ROUTES', () => {
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body).toHaveProperty('messages');
       expect(Array.isArray(response.body.messages)).toBeTruthy();
-      
+
       const messages = response.body.messages;
       expect(messages[0].content).toBe('Earlier message');
       expect(messages[1].content).toBe('Hello!');
-      expect(new Date(messages[0].timestamp).getTime()).toBeLessThan(new Date(messages[1].timestamp).getTime());
-      
+      expect(new Date(messages[0].timestamp).getTime()).toBeLessThan(
+        new Date(messages[1].timestamp).getTime(),
+      );
+
       messages.forEach((message: FormattedMessage) => {
         expect(message).toHaveProperty('messageId');
         expect(message).toHaveProperty('content');
@@ -291,22 +286,23 @@ describe('CHAT ROUTES', () => {
     });
 
     it('should return 500 when get error from Database', async () => {
-      const mockPopulate: jest.Mock = jest.fn()
+      const mockPopulate: jest.Mock = jest
+        .fn()
         .mockImplementationOnce(mockPopulateMock)
         .mockImplementationOnce(mockPopulateMock)
         .mockImplementationOnce(mockPopulateMock)
-        .mockRejectedValueOnce(new Error('Database error')); 
-    
+        .mockRejectedValueOnce(new Error('Database error'));
+
       const mockFind = jest.fn().mockReturnValue({
-        populate: mockPopulate 
+        populate: mockPopulate,
       });
-    
+
       jest.spyOn(ChatModel, 'findById').mockImplementation(mockFind);
-    
+
       const response = await supertest(app)
         .get(`/chats/${mockChat._id}`)
         .set('Authorization', `Bearer ${token}`);
-    
+
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
 
@@ -316,5 +312,5 @@ describe('CHAT ROUTES', () => {
         .set('Authorization', 'Bearer invalid-token');
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });
-  }); 
-}); 
+  });
+});

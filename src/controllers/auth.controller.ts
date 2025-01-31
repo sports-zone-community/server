@@ -4,29 +4,30 @@ import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
   InternalServerError,
-  LoggedUser,
   signTokens,
   Tokens,
-  validateToken,
+  validateRefreshToken,
   verifyPassword,
 } from '../utils';
-import { OAuth2Client } from 'google-auth-library';
 import { createUser, getUserByFilters, getUserById, updateUser } from '../repositories';
 import {
+  googleLoginSchema,
+  GoogleUser,
+  googleUserSchema,
   LoginObject,
   loginSchema,
   RegisterObject,
   registerSchema,
-} from '../validations/schemas/auth.schemas';
+} from '../validations/auth.validation';
 import { validateSchema } from '../validations/schema.validation';
 import { StatusCodes } from 'http-status-codes';
+import axios from 'axios';
+import { config } from '../config/config';
+import { Provider } from '../enums/provider.enum';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password, username, fullName }: RegisterObject = validateSchema(
-      registerSchema,
-      req,
-    );
+    const { email, password, username, name }: RegisterObject = validateSchema(registerSchema, req);
 
     const user: UserDocument | null = await UserModel.findOne({ $or: [{ email }, { username }] });
     if (user) {
@@ -35,7 +36,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     const salt: string = await genSalt(10);
     const encryptedPassword: string = await hash(password, salt);
-    await createUser({ email, password: encryptedPassword, username, fullName });
+    await createUser({ email, password: encryptedPassword, username, name: name });
 
     res.status(StatusCodes.CREATED).json({ message: 'User registered successfully' });
   } catch (error: unknown) {
@@ -60,10 +61,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const refresh = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, token }: LoggedUser = req.user;
-
+    const { id, token } = req.user;
     const user: UserDocument = await getUserById(id);
-    await validateToken(user, token);
+
+    await validateRefreshToken(user, token);
 
     const { accessToken, refreshToken }: Tokens = signTokens(id);
     user.tokens[user.tokens.indexOf(token)] = refreshToken;
@@ -77,10 +78,10 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
 
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, token }: LoggedUser = req.user;
-
+    const { id, token } = req.user;
     const user: UserDocument = await getUserById(id);
-    await validateToken(user, token);
+
+    await validateRefreshToken(user, token);
 
     user.tokens.splice(user.tokens.indexOf(token), 1);
     await updateUser(id, { tokens: [...user.tokens] });
@@ -100,44 +101,37 @@ export const verifyUser = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-const client: OAuth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 export const loginWithGoogle = async (req: Request, res: Response, next: NextFunction) => {
-  const { token } = req.body;
-  if (!token) {
-    return next(new BadRequestError('Missing credential'));
-  }
-
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    const { access_token } = validateSchema(googleLoginSchema, req);
 
-    const payload = ticket.getPayload();
-    if (!payload || !payload.email) {
+    const googleUser: GoogleUser = (
+      await axios.get<GoogleUser>(config.google.userDetailsUrl, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      })
+    ).data;
+
+    const { error } = googleUserSchema.validate(googleUser);
+    if (error) {
       return next(new BadRequestError('Invalid Google token payload'));
     }
 
-    const { email, name } = payload;
+    const { email, name, picture } = googleUser;
 
     let user: UserDocument | null = await UserModel.findOne({ email });
     if (!user) {
-      user = new UserModel({
+      user = await createUser({
         email,
         username: email.split('@')[0],
-        fullName: name || 'Google User',
-        password: null,
-        tokens: [],
+        name: name,
+        provider: Provider.GOOGLE,
+        picture,
       });
-      await user.save();
     }
 
     const { accessToken, refreshToken }: Tokens = signTokens(user.id);
 
-    const maxTokens: number = Number(process.env.GOOGLE_CLIENT_ID);
-    user.tokens = [...(user.tokens || []), refreshToken].slice(-maxTokens);
-    await user.save();
+    await updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
 
     res.status(StatusCodes.OK).json({ accessToken, refreshToken });
   } catch (error: any) {

@@ -1,23 +1,24 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import { app } from './app';
 import { Server } from 'socket.io';
-import { createServer } from 'http';
 import { SocketService } from './socket/socket.service';
+import fs from 'fs';
+import https from 'https';
+import { getCorsOptions } from './utils';
+import { config } from './config/config';
+import { initConfig } from './utils/config.utils';
 
-dotenv.config();
+initConfig();
 
-const port: string = process.env.PORT as string;
-const dbUrl: string = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
-console.log(dbUrl);
+const privateKey = fs.readFileSync(config.ssl.keyPath, 'utf8');
+const certificate = fs.readFileSync(config.ssl.certPath, 'utf8');
+const httpsOptions = { key: privateKey, cert: certificate };
+const port = config.port;
+const dbUrl: string = `mongodb://${config.database.host}:${config.database.port}/${config.database.name}`;
 
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-    credentials: true
-  }
+const httpsServer = https.createServer(httpsOptions, app);
+const io = new Server(httpsServer, {
+  cors: getCorsOptions(),
 });
 
 new SocketService(io);
@@ -27,7 +28,7 @@ new SocketService(io);
     await mongoose.connect(dbUrl);
     console.log('Connected to MongoDB');
 
-    httpServer.listen(port, () => {
+    httpsServer.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });
   } catch (error) {
