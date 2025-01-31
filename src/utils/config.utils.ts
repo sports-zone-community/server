@@ -3,6 +3,7 @@ import { config } from '../config/config';
 import { InternalServerError } from './errors';
 
 export const initConfig = () => {
+  // TODO: Implement validate Schema
   const { error } = configSchema.validate(config);
 
   if (error) {
