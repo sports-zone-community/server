@@ -10,7 +10,7 @@ const createUser = async (email: string, password: string, username: string, ful
     email,
     password: hashedPassword,
     username,
-    fullName,
+    name: fullName,
   });
 };
 
@@ -65,7 +65,7 @@ describe('AUTH ROUTES - POST /auth/login', () => {
       email: 'test@example.com',
       password: hashedPassword,
       username: 'testuser',
-      fullName: 'Test User',
+      name: 'Test User',
     });
 
     const response = await supertest(app).post('/auth/login').send({

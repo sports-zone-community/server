@@ -11,7 +11,7 @@ describe('AUTH ROUTES - POST /auth/logout', () => {
       email: 'test@example.com',
       password: 'hashedpassword',
       username: 'testuser',
-      fullName: 'Test User',
+      name: 'Test User',
       tokens: [],
     });
 
@@ -84,7 +84,7 @@ describe('AUTH ROUTES - POST /auth/logout', () => {
       email: 'test@example.com',
       password: 'hashedpassword',
       username: 'testuser',
-      fullName: 'Test User',
+      name: 'Test User',
       tokens: [],
     });
 
