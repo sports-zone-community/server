@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import { app } from './app';
 import { Server } from 'socket.io';
 import { SocketService } from './socket/socket.service';
@@ -7,8 +6,9 @@ import fs from 'fs';
 import https from 'https';
 import { getCorsOptions } from './utils';
 import { config } from './config/config';
+import { initConfig } from './utils/config.utils';
 
-dotenv.config();
+initConfig();
 
 const privateKey = fs.readFileSync(config.ssl.keyPath, 'utf8');
 const certificate = fs.readFileSync(config.ssl.certPath, 'utf8');

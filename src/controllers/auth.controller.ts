@@ -3,14 +3,11 @@ import { UserDocument, UserModel } from '../models';
 import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
-  getAuthHeader,
   InternalServerError,
   signTokens,
-  TokenPayload,
   Tokens,
   validateRefreshToken,
   verifyPassword,
-  verifyToken,
 } from '../utils';
 import { createUser, getUserByFilters, getUserById, updateUser } from '../repositories';
 import {
@@ -64,15 +61,14 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const refresh = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token: string = getAuthHeader(req);
-    const { userId }: TokenPayload = verifyToken(token, true);
+    const { id, token } = req.user;
+    const user: UserDocument = await getUserById(id);
 
-    const user: UserDocument = await getUserById(userId);
     await validateRefreshToken(user, token);
 
-    const { accessToken, refreshToken }: Tokens = signTokens(userId);
+    const { accessToken, refreshToken }: Tokens = signTokens(id);
     user.tokens[user.tokens.indexOf(token)] = refreshToken;
-    await updateUser(userId, { tokens: [...user.tokens] });
+    await updateUser(id, { tokens: [...user.tokens] });
 
     res.status(StatusCodes.OK).send({ accessToken, refreshToken });
   } catch (error: unknown) {
@@ -82,14 +78,13 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
 
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token: string = getAuthHeader(req);
-    const { userId }: TokenPayload = verifyToken(token, true);
+    const { id, token } = req.user;
+    const user: UserDocument = await getUserById(id);
 
-    const user: UserDocument = await getUserById(userId);
     await validateRefreshToken(user, token);
 
     user.tokens.splice(user.tokens.indexOf(token), 1);
-    await updateUser(userId, { tokens: [...user.tokens] });
+    await updateUser(id, { tokens: [...user.tokens] });
 
     res.status(StatusCodes.OK).send('User logged out successfully');
   } catch (error: unknown) {

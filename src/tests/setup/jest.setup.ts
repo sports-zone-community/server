@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { config } from '../../config/config';
+import { initConfig } from '../../utils/config.utils';
 
 dotenv.config({ path: '.env.test' });
+initConfig();
 
 const dbUrl: string = `mongodb://${config.database.host}:${config.database.port}/${config.database.name}`;
 

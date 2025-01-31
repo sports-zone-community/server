@@ -1,5 +1,6 @@
 import { CorsOptions } from 'cors';
 import { config } from '../config/config';
+import { UnauthorizedError } from './errors';
 
 export const getCorsOptions = (): CorsOptions => {
   const allowedOrigins = config.allowedOrigins;
@@ -12,7 +13,7 @@ export const getCorsOptions = (): CorsOptions => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new UnauthorizedError('Not allowed by CORS'));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
