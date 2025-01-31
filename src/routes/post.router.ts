@@ -5,7 +5,7 @@ import { PostController } from '../controllers';
 
 export const postRouter: Router = Router();
 
-postRouter.get('/own', PostController.getPostsByUserId);
+postRouter.get('/', PostController.getPostsByUserId);
 
 postRouter.get(
   '/:postId',
