@@ -1,9 +1,9 @@
+import { FilterQuery } from 'mongoose';
 import { Post, PostDocument, PostModel } from '../models';
 import { assertExists, getObjectId } from '../utils/functions/common.functions';
-import { FilterQuery } from 'mongoose';
-import { UpdatePostObject } from '../validations/post.validation';
+import { UpdatePostObject } from '../validations';
 
-const docType: string = 'Post';
+const docType: string = PostModel.modelName;
 
 export const createPost = async (post: Partial<Post>): Promise<PostDocument> =>
   await PostModel.create(post);

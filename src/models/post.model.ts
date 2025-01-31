@@ -1,4 +1,4 @@
-import { Model, model, Schema, Types, Document } from 'mongoose';
+import { Document, model, Model, Schema, Types } from 'mongoose';
 
 export interface Post {
   content: string;
@@ -10,6 +10,7 @@ export interface Post {
 
 export type PostDocument = Post & Document;
 
+// TODO: Remove ref if never using .populate()
 const postSchema = new Schema<PostDocument>(
   {
     content: { type: String, required: true },
