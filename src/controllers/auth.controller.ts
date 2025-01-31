@@ -3,12 +3,14 @@ import { UserDocument, UserModel } from '../models';
 import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
+  getAuthHeader,
   InternalServerError,
-  LoggedUser,
   signTokens,
+  TokenPayload,
   Tokens,
-  validateToken,
+  validateRefreshToken,
   verifyPassword,
+  verifyToken,
 } from '../utils';
 import { createUser, getUserByFilters, getUserById, updateUser } from '../repositories';
 import {
@@ -62,14 +64,15 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const refresh = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, token }: LoggedUser = req.user;
+    const token: string = getAuthHeader(req);
+    const { userId }: TokenPayload = verifyToken(token, true);
 
-    const user: UserDocument = await getUserById(id);
-    await validateToken(user, token);
+    const user: UserDocument = await getUserById(userId);
+    await validateRefreshToken(user, token);
 
-    const { accessToken, refreshToken }: Tokens = signTokens(id);
+    const { accessToken, refreshToken }: Tokens = signTokens(userId);
     user.tokens[user.tokens.indexOf(token)] = refreshToken;
-    await updateUser(id, { tokens: [...user.tokens] });
+    await updateUser(userId, { tokens: [...user.tokens] });
 
     res.status(StatusCodes.OK).send({ accessToken, refreshToken });
   } catch (error: unknown) {
@@ -79,13 +82,14 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
 
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, token }: LoggedUser = req.user;
+    const token: string = getAuthHeader(req);
+    const { userId }: TokenPayload = verifyToken(token, true);
 
-    const user: UserDocument = await getUserById(id);
-    await validateToken(user, token);
+    const user: UserDocument = await getUserById(userId);
+    await validateRefreshToken(user, token);
 
     user.tokens.splice(user.tokens.indexOf(token), 1);
-    await updateUser(id, { tokens: [...user.tokens] });
+    await updateUser(userId, { tokens: [...user.tokens] });
 
     res.status(StatusCodes.OK).send('User logged out successfully');
   } catch (error: unknown) {
@@ -107,7 +111,7 @@ export const loginWithGoogle = async (req: Request, res: Response, next: NextFun
     const { access_token } = validateSchema(googleLoginSchema, req);
 
     const googleUser: GoogleUser = (
-      await axios.get<GoogleUser>(config.googleUserDetailsUrl, {
+      await axios.get<GoogleUser>(config.google.userDetailsUrl, {
         headers: { Authorization: `Bearer ${access_token}` },
       })
     ).data;

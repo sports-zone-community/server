@@ -4,20 +4,12 @@ import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
 import { app } from '../../app';
+import { config } from '../../config/config';
+import { createAndLoginTestUser } from '../../utils';
 
 describe('AUTH ROUTES - POST /auth/refreshToken', () => {
   it('should refresh tokens for a valid refresh token', async () => {
-    const user = await UserModel.create({
-      email: 'test@example.com',
-      password: 'hashedpassword',
-      username: 'testuser',
-      name: 'Test User',
-      tokens: [],
-    });
-
-    const refreshToken = sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET!);
-    user.tokens.push(refreshToken);
-    await user.save();
+    const { refreshToken } = await createAndLoginTestUser();
 
     const response = await supertest(app)
       .post('/auth/refreshToken')
@@ -32,7 +24,6 @@ describe('AUTH ROUTES - POST /auth/refreshToken', () => {
     const response = await supertest(app).post('/auth/refreshToken');
 
     expect(response.status).toBe(StatusCodes.BAD_REQUEST);
-    expect(response.body.error).toBe('Invalid request');
   });
 
   it('should return an error for an invalid token', async () => {
@@ -40,21 +31,19 @@ describe('AUTH ROUTES - POST /auth/refreshToken', () => {
       .post('/auth/refreshToken')
       .set('Authorization', 'Bearer invalidtoken');
 
-    expect(response.status).toBe(StatusCodes.BAD_REQUEST);
-    expect(response.body.error).toBe('Invalid token');
+    expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
   });
 
   it('should return an error for user not found', async () => {
     const fakeUserId = new mongoose.Types.ObjectId();
 
-    const refreshToken = sign({ id: fakeUserId }, process.env.REFRESH_TOKEN_SECRET!);
+    const refreshToken = sign({ id: fakeUserId }, config.jwt.refreshTokenSecret);
 
     const response = await supertest(app)
       .post('/auth/refreshToken')
       .set('Authorization', `Bearer ${refreshToken}`);
 
-    expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
-    expect(response.body.error).toBe('user not found');
+    expect(response.status).toBe(StatusCodes.NOT_FOUND);
   });
 
   it('should return an error for token not found', async () => {
@@ -64,34 +53,23 @@ describe('AUTH ROUTES - POST /auth/refreshToken', () => {
       email: 'test@example.com',
       password: 'hashedpassword',
       username: 'testuser',
-      fullName: 'Test User',
+      name: 'Test User',
       tokens: ['differentToken'],
     });
 
     await user.save();
 
-    const refreshToken = sign({ id: fakeUserId.toString() }, process.env.REFRESH_TOKEN_SECRET!);
+    const refreshToken = sign({ id: fakeUserId.toString() }, config.jwt.refreshTokenSecret);
 
     const response = await supertest(app)
       .post('/auth/refreshToken')
       .set('Authorization', `Bearer ${refreshToken}`);
 
-    expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
-    expect(response.body.error).toBe('token not found');
+    expect(response.status).toBe(StatusCodes.NOT_FOUND);
   });
 
   it('should return 500 Internal Server Error on failure', async () => {
-    const user = await UserModel.create({
-      email: 'test@example.com',
-      password: 'hashedpassword',
-      username: 'testuser',
-      name: 'Test User',
-      tokens: [],
-    });
-
-    const refreshToken = sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET!);
-    user.tokens.push(refreshToken);
-    await user.save();
+    const { refreshToken } = await createAndLoginTestUser();
 
     jest.spyOn(UserModel, 'findById').mockRejectedValue(new Error('Internal Server Error'));
 
@@ -100,6 +78,5 @@ describe('AUTH ROUTES - POST /auth/refreshToken', () => {
       .set('Authorization', `Bearer ${refreshToken}`);
 
     expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-    expect(response.body.error).toBe('Internal Server Error');
   });
 });

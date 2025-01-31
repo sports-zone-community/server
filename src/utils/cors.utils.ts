@@ -1,7 +1,8 @@
 import { CorsOptions } from 'cors';
+import { config } from '../config/config';
 
 export const getCorsOptions = (): CorsOptions => {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+  const allowedOrigins = config.allowedOrigins;
 
   return {
     origin: (

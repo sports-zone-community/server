@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { config } from '../../config/config';
 
 dotenv.config({ path: '.env.test' });
 
-const dbUrl: string = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+const dbUrl: string = `mongodb://${config.database.host}:${config.database.port}/${config.database.name}`;
 
 beforeAll(async () => {
   try {
@@ -18,7 +19,7 @@ beforeAll(async () => {
 afterAll(async () => {
   try {
     await mongoose.connection.close();
-    
+
     console.log('Database connection closed');
   } catch (error) {
     console.error('Error closing database connection:', error);

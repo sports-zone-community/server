@@ -5,6 +5,7 @@ import { compare } from 'bcryptjs';
 import { UserDocument } from '../models';
 import { updateUser } from '../repositories';
 import { TokenPayload, Tokens } from './types';
+import { config } from '../config/config';
 
 export const getAuthHeader = (req: Request): string => {
   const token: string | undefined = req.header('Authorization')?.split(' ')[1];
@@ -16,16 +17,11 @@ export const getAuthHeader = (req: Request): string => {
 };
 
 export const signTokens = (userId: string): Tokens => {
-  const accessToken: string = sign(
-    { userId } as TokenPayload,
-    process.env.ACCESS_TOKEN_SECRET as Secret,
-    { expiresIn: process.env.JWT_TOKEN_EXPIRATION },
-  );
+  const accessToken: string = sign({ userId } as TokenPayload, config.jwt.accessTokenSecret, {
+    expiresIn: config.jwt.tokenExpiration,
+  });
 
-  const refreshToken: string = sign(
-    { userId } as TokenPayload,
-    process.env.REFRESH_TOKEN_SECRET as Secret,
-  );
+  const refreshToken: string = sign({ userId } as TokenPayload, config.jwt.refreshTokenSecret);
 
   return { accessToken, refreshToken };
 };
@@ -34,7 +30,7 @@ export const verifyToken = (token: string, isRefresh = false): TokenPayload => {
   try {
     return verify(
       token,
-      (isRefresh ? process.env.REFRESH_TOKEN_SECRET : process.env.ACCESS_TOKEN_SECRET) as Secret,
+      (isRefresh ? config.jwt.refreshTokenSecret : config.jwt.accessTokenSecret) as Secret,
     ) as TokenPayload;
   } catch (error: unknown) {
     throw new UnauthorizedError(`Invalid token`);
@@ -48,7 +44,7 @@ export const verifyPassword = async (password: string, hashedPassword: string) =
   }
 };
 
-export const validateToken = async (user: UserDocument, token: string) => {
+export const validateRefreshToken = async (user: UserDocument, token: string) => {
   if (!user.tokens.includes(token)) {
     await updateUser(user.id, { tokens: [] });
     throw new UnauthorizedError('Token not found');

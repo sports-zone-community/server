@@ -6,15 +6,15 @@ import { SocketService } from './socket/socket.service';
 import fs from 'fs';
 import https from 'https';
 import { getCorsOptions } from './utils';
+import { config } from './config/config';
 
 dotenv.config();
 
-const privateKey = fs.readFileSync(process.env.SSL_KEY_PATH as string, 'utf8');
-const certificate = fs.readFileSync(process.env.SSL_CERT_PATH as string, 'utf8');
+const privateKey = fs.readFileSync(config.ssl.keyPath, 'utf8');
+const certificate = fs.readFileSync(config.ssl.certPath, 'utf8');
 const httpsOptions = { key: privateKey, cert: certificate };
-
-const port: string = process.env.PORT as string;
-const dbUrl: string = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+const port = config.port;
+const dbUrl: string = `mongodb://${config.database.host}:${config.database.port}/${config.database.name}`;
 
 const httpsServer = https.createServer(httpsOptions, app);
 const io = new Server(httpsServer, {
