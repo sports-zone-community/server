@@ -1,4 +1,3 @@
-import { FilterQuery } from 'mongoose';
 import { Post, PostDocument, PostModel } from '../models';
 import { assertExists, getObjectId } from '../utils/functions/common.functions';
 import { UpdatePostObject } from '../validations';
@@ -20,38 +19,17 @@ export const updatePost = async (id: string, postUpdate: UpdatePostObject): Prom
 export const deletePost = async (id: string): Promise<boolean> =>
   !!assertExists((await PostModel.findByIdAndDelete(id)) as PostDocument, docType);
 
-export const getPostsByFilters = async (filter: FilterQuery<Post>): Promise<PostDocument[]> =>
-  await PostModel.find(filter);
-
-export const getPostByFilters = async (filters: FilterQuery<Post>): Promise<PostDocument> =>
-  assertExists((await PostModel.findOne(filters)) as PostDocument, docType);
-
-export const likePost = async (postId: string, userId: string): Promise<PostDocument> =>
-  assertExists(
-    (await PostModel.findByIdAndUpdate(
-      postId,
-      {
-        $push: { likes: userId },
-      },
-      { new: true },
-    )) as PostDocument,
+export const toggleLike = async (
+  postId: string,
+  userId: string,
+  isLiked: boolean,
+): Promise<PostDocument> => {
+  const updateQuery = isLiked ? { $push: { likes: userId } } : { $pull: { likes: userId } };
+  return assertExists(
+    (await PostModel.findByIdAndUpdate(postId, updateQuery, { new: true })) as PostDocument,
     docType,
   );
+};
 
-export const unlikePost = async (postId: string, userId: string): Promise<PostDocument> =>
-  assertExists(
-    (await PostModel.findByIdAndUpdate(
-      postId,
-      {
-        $pull: { likes: userId },
-      },
-      { new: true },
-    )) as PostDocument,
-    docType,
-  );
-
-export const getLikedPosts = async (userId: string): Promise<PostDocument[]> =>
-  await PostModel.find({ likes: { $in: [getObjectId(userId)] } });
-
-export const getOwnPosts = async (userId: string): Promise<PostDocument[]> =>
+export const getPostsByUserId = async (userId: string): Promise<PostDocument[]> =>
   await PostModel.find({ userId: getObjectId(userId) });

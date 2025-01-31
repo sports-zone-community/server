@@ -1,13 +1,11 @@
 import { Router } from 'express';
 import { validationMiddleware } from '../middlewares';
-import { createPostSchema, postIdSchema, updatePostSchema } from '../validations/post.validation';
+import { createPostSchema, postIdSchema, updatePostSchema } from '../validations';
 import { PostController } from '../controllers';
 
 export const postRouter: Router = Router();
 
-postRouter.get('/liked', PostController.getLikedPosts);
-
-postRouter.get('/own', PostController.getOwnPosts);
+postRouter.get('/own', PostController.getPostsByUserId);
 
 postRouter.get(
   '/:postId',
@@ -34,13 +32,7 @@ postRouter.delete(
 );
 
 postRouter.post(
-  '/like/:postId',
+  '/toggle-like/:postId',
   validationMiddleware({ paramsSchema: postIdSchema }),
-  PostController.likePost,
-);
-
-postRouter.post(
-  '/unlike/:postId',
-  validationMiddleware({ paramsSchema: postIdSchema }),
-  PostController.unlikePost,
+  PostController.toggleLike,
 );

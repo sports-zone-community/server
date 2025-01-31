@@ -1,25 +1,33 @@
 import { Request, Response } from 'express';
-import { UserDocument, UserModel } from '../models';
+import { UserDocument } from '../models';
 import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
-  LoggedUser,
   signTokens,
   Tokens,
-  validateToken,
+  validateRefreshToken,
   verifyPassword,
 } from '../utils';
-import { OAuth2Client } from 'google-auth-library';
 import { UserRepository } from '../repositories';
-import { LoginObject, RegisterObject } from '../validations/auth.validation';
+import {
+  GoogleLoginObject,
+  GoogleUser,
+  googleUserSchema,
+  LoginObject,
+  RegisterObject,
+} from '../validations';
 import { StatusCodes } from 'http-status-codes';
+import axios from 'axios';
+import { config } from '../config/config';
+import { Provider } from '../enums/provider.enum';
+import { ValidationResult } from 'joi';
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, username, fullName }: RegisterObject = req.body as RegisterObject;
+  const { email, password, username, name }: RegisterObject = req.body as RegisterObject;
 
   const salt: string = await genSalt(10);
   const encryptedPassword: string = await hash(password, salt);
-  await UserRepository.createUser({ email, password: encryptedPassword, username, fullName });
+  await UserRepository.createUser({ email, password: encryptedPassword, username, name });
 
   res.status(StatusCodes.CREATED).json({ message: 'User registered successfully' });
 };
@@ -37,10 +45,10 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const refresh = async (req: Request, res: Response) => {
-  const { id, token }: LoggedUser = req.user;
+  const { id, token } = req.user;
 
   const user: UserDocument = await UserRepository.getUserById(id);
-  await validateToken(user, token);
+  await validateRefreshToken(user, token);
 
   const { accessToken, refreshToken }: Tokens = signTokens(id);
   user.tokens[user.tokens.indexOf(token)] = refreshToken;
@@ -50,10 +58,10 @@ export const refresh = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
-  const { id, token }: LoggedUser = req.user;
+  const { id, token } = req.user;
 
   const user: UserDocument = await UserRepository.getUserById(id);
-  await validateToken(user, token);
+  await validateRefreshToken(user, token);
 
   user.tokens.splice(user.tokens.indexOf(token), 1);
   await UserRepository.updateUser(id, { tokens: [...user.tokens] });
@@ -66,44 +74,30 @@ export const verifyUser = async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).json({ user });
 };
 
-const client: OAuth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-// TODO: Shorten this or move to smaller functions
 export const loginWithGoogle = async (req: Request, res: Response) => {
-  const { token } = req.body;
-  if (!token) {
-    throw new BadRequestError('Missing credential');
-  }
+  const { access_token }: GoogleLoginObject = req.body as GoogleLoginObject;
 
-  const ticket = await client.verifyIdToken({
-    idToken: token,
-    audience: process.env.GOOGLE_CLIENT_ID,
-  });
+  const googleUser: GoogleUser = (
+    await axios.get<GoogleUser>(config.google.userDetailsUrl, {
+      headers: { Authorization: `Bearer ${access_token}` },
+    })
+  ).data;
 
-  const payload = ticket.getPayload();
-  if (!payload || !payload.email) {
+  const { value, error }: ValidationResult<GoogleUser> = googleUserSchema.validate(googleUser);
+  if (error) {
     throw new BadRequestError('Invalid Google token payload');
   }
 
-  const { email, name } = payload;
-
-  let user: UserDocument | null = await UserModel.findOne({ email });
-  if (!user) {
-    user = new UserModel({
-      email,
-      username: email.split('@')[0],
-      fullName: name || 'Google User',
-      password: null,
-      tokens: [],
-    });
-    await user.save();
-  }
+  const user: UserDocument = await UserRepository.getOrCreateUser({
+    email: value.email,
+    username: value.email.split('@')[0],
+    name: value.name,
+    provider: Provider.GOOGLE,
+    picture: value.picture,
+  });
 
   const { accessToken, refreshToken }: Tokens = signTokens(user.id);
-
-  const maxTokens: number = Number(process.env.GOOGLE_CLIENT_ID);
-  user.tokens = [...(user.tokens || []), refreshToken].slice(-maxTokens);
-  await user.save();
+  await UserRepository.updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
 
   res.status(StatusCodes.OK).json({ accessToken, refreshToken });
 };
