@@ -8,6 +8,7 @@ export interface Comment {
 
 export type CommentDocument = Comment & Document;
 
+// TODO: Remove ref if never using .populate()
 const commentSchema = new Schema<CommentDocument>(
   {
     content: { type: String, required: true },
