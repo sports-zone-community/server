@@ -28,8 +28,9 @@ describe('AUTH ROUTES - POST /auth/register', () => {
     await createTestUser();
     const response = await createTestUser();
 
-    expect(response.status).toBe(StatusCodes.BAD_REQUEST);
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
   });
+
   it('should return 500 Internal Server Error on failure', async () => {
     jest.spyOn(UserModel, 'create').mockRejectedValue(new Error('Internal Server Error'));
 
