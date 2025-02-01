@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { validationMiddleware } from '../middlewares';
-import { createPostSchema, postIdSchema, updatePostSchema } from '../validations/post.validation';
+import { createPostSchema, postIdSchema, updatePostSchema } from '../validations';
 import { PostController } from '../controllers';
 
 export const postRouter: Router = Router();

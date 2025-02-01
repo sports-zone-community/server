@@ -1,7 +1,7 @@
-import { PopulatedChat, PopulatedMessage, PopulatedUser } from '../interfaces/populated';
+import { PopulatedChat, PopulatedMessage, PopulatedUser } from './interfaces/populated';
 import { Types } from 'mongoose';
-import { PopulatedGroup } from '../interfaces/populated';
-import { FormattedChat, FormattedMessage } from '../interfaces/chat';
+import { PopulatedGroup } from './interfaces/populated';
+import { FormattedChat, FormattedMessage } from './interfaces/chat';
   
 export const processChatsData = (chats: PopulatedChat[], userId: string): FormattedChat[] => {
     return chats.map((chat: PopulatedChat) => {

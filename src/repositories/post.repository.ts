@@ -1,8 +1,8 @@
 import { Post, PostDocument, PostModel } from '../models';
-import { assertExists, getObjectId } from '../utils/functions/common.functions';
-import { UpdatePostObject } from '../validations/post.validation';
+import { assertExists, getObjectId } from '../utils/common.utils';
+import { UpdatePostObject } from '../validations';
 
-const docType: string = 'Post';
+const docType: string = PostModel.modelName;
 
 export const createPost = async (post: Partial<Post>): Promise<PostDocument> =>
   await PostModel.create(post);

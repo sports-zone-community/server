@@ -2,7 +2,7 @@ import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { authRouter, chatRouter, groupRouter, postRouter } from './routes';
+import { authRouter, chatRouter, commentRouter, groupRouter, postRouter } from './routes';
 import { authMiddleware, errorMiddleware, loggerMiddleware } from './middlewares';
 import { getCorsOptions } from './utils';
 
@@ -19,5 +19,6 @@ app.use('/auth', authRouter);
 app.use('/chats', chatRouter);
 app.use('/groups', groupRouter);
 app.use('/posts', authMiddleware, postRouter);
+app.use('/comments', authMiddleware, commentRouter);
 
 app.use(errorMiddleware);

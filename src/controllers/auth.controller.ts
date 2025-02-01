@@ -15,7 +15,7 @@ import {
   googleUserSchema,
   LoginObject,
   RegisterObject,
-} from '../validations/auth.validation';
+} from '../validations';
 import { StatusCodes } from 'http-status-codes';
 import axios from 'axios';
 import { config } from '../config/config';

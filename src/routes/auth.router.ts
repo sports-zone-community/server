@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware, validationMiddleware, verifyRefreshTokenMiddleware } from '../middlewares';
 import { AuthController } from '../controllers';
-import { googleLoginSchema, loginSchema, registerSchema } from '../validations/auth.validation';
+import { googleLoginSchema, loginSchema, registerSchema } from '../validations';
 
 export const authRouter: Router = Router();
 
