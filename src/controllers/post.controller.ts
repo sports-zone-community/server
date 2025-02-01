@@ -1,11 +1,16 @@
 import { Request, Response } from 'express';
-import { BadRequestError, LoggedUser } from '../utils';
+import {
+  assertExists,
+  BadRequestError,
+  checkPostOwner,
+  getObjectId,
+  isPostLikedByUser,
+  LoggedUser,
+} from '../utils';
 import { CreatePostObject, UpdatePostObject } from '../validations';
-import * as PostRepository from '../repositories/post.repository';
+import { PostRepository } from '../repositories';
 import { GroupDocument, GroupModel, PostDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
-import { checkPostOwner, isPostLikedByUser } from '../utils/post.utils';
-import { assertExists, getObjectId } from '../utils/common.utils';
 
 export const createPost = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
@@ -70,4 +75,12 @@ export const getPostsByUserId = async (req: Request, res: Response) => {
   const ownPosts: PostDocument[] = await PostRepository.getPostsByUserId(id);
 
   res.status(StatusCodes.OK).json(ownPosts);
+};
+
+export const getExplorePosts = async (req: Request, res: Response) => {
+  const { id }: LoggedUser = req.user;
+  const page: number = Number(req.query.page);
+  const posts: PostDocument[] = await PostRepository.getExplorePosts(id, page);
+
+  res.status(StatusCodes.OK).json(posts);
 };

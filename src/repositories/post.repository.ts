@@ -1,7 +1,9 @@
-import { Post, PostDocument, PostModel } from '../models';
+import { UpdateQuery } from 'mongoose';
+import { Post, PostDocument, PostModel, UserDocument } from '../models';
 import { assertExists, getObjectId } from '../utils';
 import { UpdatePostObject } from '../validations';
-import { UpdateQuery } from 'mongoose';
+import * as UserRepository from './user.repository';
+import { config } from '../config/config';
 
 const docType: string = PostModel.modelName;
 
@@ -36,3 +38,15 @@ export const toggleLike = async (
 
 export const getPostsByUserId = async (userId: string): Promise<PostDocument[]> =>
   await PostModel.find({ userId: getObjectId(userId) });
+
+export const getExplorePosts = async (userId: string, page: number): Promise<PostDocument[]> => {
+  const user: UserDocument = await UserRepository.getUserById(userId);
+  const limit: number = config.pageSize;
+
+  return PostModel.find({
+    $or: [{ userId: { $in: user.following } }, { groupId: { $in: user.groups } }],
+  })
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
+};
