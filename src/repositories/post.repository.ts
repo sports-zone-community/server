@@ -1,6 +1,7 @@
 import { Post, PostDocument, PostModel } from '../models';
 import { assertExists, getObjectId } from '../utils';
 import { UpdatePostObject } from '../validations';
+import { UpdateQuery } from 'mongoose';
 
 const docType: string = PostModel.modelName;
 
@@ -24,7 +25,9 @@ export const toggleLike = async (
   userId: string,
   isLiked: boolean,
 ): Promise<PostDocument> => {
-  const updateQuery = isLiked ? { $pull: { likes: userId } } : { $push: { likes: userId } };
+  const updateQuery: UpdateQuery<PostDocument> = isLiked
+    ? { $pull: { likes: userId } }
+    : { $addToSet: { likes: userId } };
   return assertExists(
     (await PostModel.findByIdAndUpdate(postId, updateQuery, { new: true })) as PostDocument,
     docType,

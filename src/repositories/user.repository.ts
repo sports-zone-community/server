@@ -33,7 +33,7 @@ export const toggleFollow = async (
 ): Promise<UserDocument> => {
   const updateQuery: UpdateQuery<UserDocument> = isFollowing
     ? { $pull: { following: otherUserId } }
-    : { $push: { following: otherUserId } };
+    : { $addToSet: { following: otherUserId } };
   return assertExists(
     (await UserModel.findByIdAndUpdate(selfUserId, updateQuery, { new: true })) as UserDocument,
     docType,
