@@ -2,11 +2,12 @@ import Joi from 'joi';
 import { Config } from '../config/config';
 
 export const configSchema: Joi.ObjectSchema<Config> = Joi.object<Config>({
+  environment: Joi.string().required(),
   port: Joi.number().required(),
   ssl: Joi.object({
-    keyPath: Joi.string().required(),
-    certPath: Joi.string().required(),
-  }).required(),
+    keyPath: Joi.string().optional(),
+    certPath: Joi.string().optional(),
+  }).optional(),
   allowedOrigins: Joi.array().items(Joi.string()).required(),
   database: Joi.object({
     host: Joi.string().required(),

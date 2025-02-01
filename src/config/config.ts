@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config: Config = {
+  environment: process.env.NODE_ENV!,
   port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
   ssl: {
     keyPath: process.env.SSL_KEY_PATH!,
@@ -25,6 +26,7 @@ export const config: Config = {
 };
 
 export interface Config {
+  environment: string;
   port: number;
   ssl: {
     keyPath: string;

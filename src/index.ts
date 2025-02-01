@@ -4,20 +4,27 @@ import { Server } from 'socket.io';
 import { SocketService } from './socket/socket.service';
 import fs from 'fs';
 import https from 'https';
-import { getCorsOptions } from './utils';
+import { getCorsOptions, initConfig } from './utils';
 import { config } from './config/config';
-import { initConfig } from './utils/config.utils';
+import http from 'http';
 
 initConfig();
 
-const privateKey = fs.readFileSync(config.ssl.keyPath, 'utf8');
-const certificate = fs.readFileSync(config.ssl.certPath, 'utf8');
-const httpsOptions = { key: privateKey, cert: certificate };
 const port = config.port;
 const dbUrl: string = `mongodb://${config.database.host}:${config.database.port}/${config.database.name}`;
+let server: http.Server | https.Server;
 
-const httpsServer = https.createServer(httpsOptions, app);
-const io = new Server(httpsServer, {
+if (config.environment === 'production') {
+  const httpsOptions = {
+    key: fs.readFileSync(config.ssl.keyPath, 'utf8'),
+    cert: fs.readFileSync(config.ssl.certPath, 'utf8'),
+  };
+  server = https.createServer(httpsOptions, app);
+} else {
+  server = http.createServer(app);
+}
+
+const io = new Server(server, {
   cors: getCorsOptions(),
 });
 
@@ -28,7 +35,7 @@ new SocketService(io);
     await mongoose.connect(dbUrl);
     console.log('Connected to MongoDB');
 
-    httpsServer.listen(port, () => {
+    server.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });
   } catch (error) {
