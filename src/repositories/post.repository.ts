@@ -1,5 +1,5 @@
 import { Post, PostDocument, PostModel } from '../models';
-import { assertExists, getObjectId } from '../utils/functions/common.functions';
+import { assertExists, getObjectId } from '../utils/common.utils';
 import { UpdatePostObject } from '../validations';
 
 const docType: string = PostModel.modelName;

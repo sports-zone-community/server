@@ -1,6 +1,6 @@
 import { User, UserDocument, UserModel } from '../models';
 import { FilterQuery } from 'mongoose';
-import { assertExists } from '../utils/functions/common.functions';
+import { assertExists } from '../utils/common.utils';
 
 const docType: string = UserModel.modelName;
 

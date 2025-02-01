@@ -1,5 +1,5 @@
 import { Comment, CommentDocument, CommentModel } from '../models';
-import { assertExists } from '../utils/functions/common.functions';
+import { assertExists } from '../utils';
 
 const docType: string = CommentModel.modelName;
 
@@ -12,5 +12,5 @@ export const getCommentsByPostId = async (postId: string): Promise<CommentDocume
 export const addComment = async (comment: Comment): Promise<CommentDocument> =>
   await CommentModel.create(comment);
 
-export const deleteComment = async (commentId: string): Promise<boolean> =>
-  !!assertExists((await CommentModel.findByIdAndDelete(commentId)) as CommentDocument, docType);
+export const deleteComment = async (commentId: string) =>
+  assertExists((await CommentModel.findByIdAndDelete(commentId)) as CommentDocument, docType);

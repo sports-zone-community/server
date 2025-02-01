@@ -8,7 +8,7 @@ export const commentRouter: Router = Router();
 commentRouter.get(
   '/',
   validationMiddleware({ querySchema: postIdSchema }),
-  CommentController.getCommentByPostId,
+  CommentController.getCommentsByPostId,
 );
 
 commentRouter.post(

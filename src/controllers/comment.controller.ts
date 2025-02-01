@@ -2,12 +2,12 @@ import { Request, Response } from 'express';
 import { CreateCommentObject } from '../validations';
 import { CommentRepository, PostRepository } from '../repositories';
 import { LoggedUser } from '../utils';
-import { getObjectId } from '../utils/functions/common.functions';
+import { getObjectId } from '../utils/common.utils';
 import { CommentDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
 import { checkCommentOwner } from '../utils/comment.utils';
 
-export const getCommentByPostId = async (req: Request, res: Response) => {
+export const getCommentsByPostId = async (req: Request, res: Response) => {
   const postId: string = req.query.postId as string;
 
   const comments: CommentDocument[] = await CommentRepository.getCommentsByPostId(postId);
@@ -35,5 +35,5 @@ export const deleteComment = async (req: Request, res: Response) => {
   await checkCommentOwner(commentId, id);
   await CommentRepository.deleteComment(commentId);
 
-  res.status(StatusCodes.NO_CONTENT).json();
+  res.status(StatusCodes.OK).json('Comment was deleted');
 };

@@ -5,7 +5,7 @@ import * as PostRepository from '../repositories/post.repository';
 import { GroupDocument, GroupModel, PostDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
 import { checkPostOwner, isPostLikedByUser } from '../utils/post.utils';
-import { assertExists, getObjectId } from '../utils/functions/common.functions';
+import { assertExists, getObjectId } from '../utils/common.utils';
 
 export const createPost = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
