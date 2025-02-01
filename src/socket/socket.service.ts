@@ -1,9 +1,7 @@
 import { Server, Socket } from 'socket.io';
-import { Chat, ChatModel } from '../models/chat.model';
+import { Chat, ChatModel, IMessage, UserModel } from '../models';
 import { Types } from 'mongoose';
-import { IMessage } from '../models/message.model';
 import { Secret, verify } from 'jsonwebtoken';
-import { UserModel } from '../models';
 import { config } from '../config/config';
 
 export class SocketService {

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { Types, UpdateResult } from 'mongoose';
 
-import { getUnreadChats, processChatsData, sortMessages } from '../utils/functions/chat.functions';
+import { getUnreadChats, processChatsData, sortMessages } from '../utils/chat.utils';
 import {
   fetchUserChats,
   markMessagesAsReaded,

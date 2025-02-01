@@ -2,10 +2,8 @@ import { Types } from 'mongoose';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { app } from '../../app';
-import { GroupModel } from '../../models/group.model';
-import { ChatModel } from '../../models/chat.model';
-import { createAndLoginTestUser } from '../../utils/tests.utils';
-import { UserModel } from '../../models';
+import { ChatModel, GroupModel, UserModel } from '../../models';
+import { createAndLoginTestUser } from '../../utils';
 
 describe('GROUP ROUTES', () => {
   let token: string;

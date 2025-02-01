@@ -21,6 +21,7 @@ const userSchema = new Schema<UserDocument>({
   username: {
     type: String,
     required: true,
+    unique: [true, 'Username is already taken'],
   },
   password: {
     type: String,
@@ -28,6 +29,7 @@ const userSchema = new Schema<UserDocument>({
   email: {
     type: String,
     required: true,
+    unique: [true, 'Email is already taken'],
   },
   name: {
     type: String,
@@ -52,7 +54,8 @@ const userSchema = new Schema<UserDocument>({
     default: Provider.LOCAL,
   },
   groups: [
-    {
+
+      {
       type: Schema.Types.ObjectId,
       ref: 'Group',
     },

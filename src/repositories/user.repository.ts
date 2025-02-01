@@ -1,43 +1,27 @@
-import { UserDocument, UserModel } from '../models';
-import { InternalServerError, NotFoundError } from '../utils';
+import { User, UserDocument, UserModel } from '../models';
 import { FilterQuery } from 'mongoose';
+import { assertExists } from '../utils/common.utils';
 
-export const getUserById = async (userId: string): Promise<UserDocument> => {
-  const user: UserDocument | null = await UserModel.findById(userId);
-  if (!user) {
-    throw new NotFoundError('User not found');
-  }
+const docType: string = UserModel.modelName;
 
-  return user;
-};
+export const getUserById = async (userId: string): Promise<UserDocument> =>
+  assertExists((await UserModel.findById(userId)) as UserDocument, docType);
 
-export const getUserByFilters = async (
-  filters: FilterQuery<UserDocument>,
-): Promise<UserDocument> => {
-  const user: UserDocument | null = await UserModel.findOne(filters);
-  if (!user) {
-    throw new NotFoundError('User not found');
-  }
-
-  return user;
-};
+export const getUserByFilters = async (filters: FilterQuery<UserDocument>): Promise<UserDocument> =>
+  assertExists((await UserModel.findOne(filters)) as UserDocument, docType);
 
 export const updateUser = async (
   userId: string,
   userUpdate: Partial<UserDocument>,
-): Promise<UserDocument> => {
-  const user: UserDocument | null = await UserModel.findByIdAndUpdate(userId, userUpdate);
-  if (!user) {
-    throw new NotFoundError('User not found');
-  }
+): Promise<UserDocument> =>
+  assertExists((await UserModel.findByIdAndUpdate(userId, userUpdate)) as UserDocument, docType);
 
-  return user;
-};
+export const createUser = async (user: Partial<User>): Promise<UserDocument> =>
+  await UserModel.create(user);
 
-export const createUser = async (user: Partial<UserDocument>): Promise<UserDocument> => {
-  try {
-    return await UserModel.create(user);
-  } catch (error: any) {
-    throw new InternalServerError(error.message);
-  }
+export const getOrCreateUser = async (user: Partial<User>): Promise<UserDocument> => {
+  const existingUser: UserDocument | null = await UserModel.findOne({
+    $or: [{ email: user.email }, { username: user.username }],
+  });
+  return existingUser || (await UserModel.create(user));
 };

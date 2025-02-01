@@ -17,7 +17,9 @@ export const loginSchema: ObjectSchema<LoginObject> = Joi.object({
   password: Joi.string().required().min(6).max(30),
 });
 
-export const googleLoginSchema: ObjectSchema<{ access_token: string }> = Joi.object({
+export type GoogleLoginObject = { access_token: string };
+
+export const googleLoginSchema: ObjectSchema<GoogleLoginObject> = Joi.object<GoogleLoginObject>({
   access_token: Joi.string().required(),
 });
 

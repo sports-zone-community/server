@@ -1,12 +1,11 @@
-import Joi from "joi";
+import Joi from 'joi';
+import { mongoIdSchema } from './common.validation';
 
 export const createGroupSchema = Joi.object({
-    name: Joi.string().required().min(2).max(30),
-    description: Joi.string().max(200),
-    members: Joi.array().items(Joi.string()).min(0),
-    creatorId: Joi.string().required().hex().length(24)
-  });
-  
-export const joinGroupSchema = Joi.object({
-    groupId: Joi.string().required().hex().length(24),
-  });
+  name: Joi.string().required().min(2).max(30),
+  description: Joi.string().max(200),
+  members: Joi.array().items(Joi.string()).min(0),
+  creatorId: mongoIdSchema,
+});
+
+export const joinGroupSchema = Joi.object({ groupId: mongoIdSchema });
