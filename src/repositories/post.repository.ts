@@ -1,5 +1,5 @@
 import { Post, PostDocument, PostModel } from '../models';
-import { assertExists, getObjectId } from '../utils/common.utils';
+import { assertExists, getObjectId } from '../utils';
 import { UpdatePostObject } from '../validations';
 
 const docType: string = PostModel.modelName;
@@ -24,7 +24,7 @@ export const toggleLike = async (
   userId: string,
   isLiked: boolean,
 ): Promise<PostDocument> => {
-  const updateQuery = isLiked ? { $push: { likes: userId } } : { $pull: { likes: userId } };
+  const updateQuery = isLiked ? { $pull: { likes: userId } } : { $push: { likes: userId } };
   return assertExists(
     (await PostModel.findByIdAndUpdate(postId, updateQuery, { new: true })) as PostDocument,
     docType,

@@ -1,5 +1,6 @@
 import Joi, { ObjectSchema } from 'joi';
 import { User } from '../models';
+import { mongoIdSchema } from './common.validation';
 
 export type RegisterObject = Omit<User, 'tokens'>;
 
@@ -41,4 +42,12 @@ export const googleUserSchema: ObjectSchema<GoogleUser> = Joi.object({
   given_name: Joi.string().required().min(3).max(20),
   family_name: Joi.string().required().min(3).max(20),
   picture: Joi.string().required(),
+});
+
+export interface UserIdParams {
+  userId: string;
+}
+
+export const userIdSchema: Joi.ObjectSchema<UserIdParams> = Joi.object<UserIdParams>({
+  userId: mongoIdSchema,
 });

@@ -3,6 +3,8 @@ import { UserDocument } from '../models';
 import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
+  isFollowingUser,
+  LoggedUser,
   signTokens,
   Tokens,
   validateRefreshToken,
@@ -45,7 +47,7 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const refresh = async (req: Request, res: Response) => {
-  const { id, token } = req.user;
+  const { id, token }: LoggedUser = req.user;
 
   const user: UserDocument = await UserRepository.getUserById(id);
   await validateRefreshToken(user, token);
@@ -58,7 +60,7 @@ export const refresh = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
-  const { id, token } = req.user;
+  const { id, token }: LoggedUser = req.user;
 
   const user: UserDocument = await UserRepository.getUserById(id);
   await validateRefreshToken(user, token);
@@ -100,4 +102,21 @@ export const loginWithGoogle = async (req: Request, res: Response) => {
   await UserRepository.updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
 
   res.status(StatusCodes.OK).json({ accessToken, refreshToken });
+};
+
+export const toggleFollow = async (req: Request, res: Response) => {
+  const { id }: LoggedUser = req.user;
+  const otherUserId: string = req.params.userId;
+
+  if (id === otherUserId) {
+    throw new BadRequestError('You cannot follow yourself');
+  }
+
+  const user: UserDocument = await UserRepository.toggleFollow(
+    id,
+    otherUserId,
+    await isFollowingUser(id, otherUserId),
+  );
+
+  res.status(StatusCodes.OK).json(user);
 };

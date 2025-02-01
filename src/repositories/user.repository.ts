@@ -1,6 +1,6 @@
+import { FilterQuery, UpdateQuery } from 'mongoose';
 import { User, UserDocument, UserModel } from '../models';
-import { FilterQuery } from 'mongoose';
-import { assertExists } from '../utils/common.utils';
+import { assertExists } from '../utils';
 
 const docType: string = UserModel.modelName;
 
@@ -24,4 +24,18 @@ export const getOrCreateUser = async (user: Partial<User>): Promise<UserDocument
     $or: [{ email: user.email }, { username: user.username }],
   });
   return existingUser || (await UserModel.create(user));
+};
+
+export const toggleFollow = async (
+  selfUserId: string,
+  otherUserId: string,
+  isFollowing: boolean,
+): Promise<UserDocument> => {
+  const updateQuery: UpdateQuery<UserDocument> = isFollowing
+    ? { $pull: { following: otherUserId } }
+    : { $push: { following: otherUserId } };
+  return assertExists(
+    (await UserModel.findByIdAndUpdate(selfUserId, updateQuery, { new: true })) as UserDocument,
+    docType,
+  );
 };
