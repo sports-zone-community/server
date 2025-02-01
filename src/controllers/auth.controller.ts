@@ -106,16 +106,16 @@ export const loginWithGoogle = async (req: Request, res: Response) => {
 
 export const toggleFollow = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
-  const otherUserId: string = req.params.userId;
+  const targetUserId: string = req.params.userId;
 
-  if (id === otherUserId) {
+  if (id === targetUserId) {
     throw new BadRequestError('You cannot follow yourself');
   }
 
   const user: UserDocument = await UserRepository.toggleFollow(
     id,
-    otherUserId,
-    await isFollowingUser(id, otherUserId),
+    targetUserId,
+    await isFollowingUser(id, targetUserId),
   );
 
   res.status(StatusCodes.OK).json(user);
