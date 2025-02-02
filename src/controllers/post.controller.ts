@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import {
-  assertExists,
   BadRequestError,
   checkPostOwner,
   getObjectId,
@@ -8,17 +7,16 @@ import {
   LoggedUser,
 } from '../utils';
 import { CreatePostObject, UpdatePostObject } from '../validations';
-import { PostRepository } from '../repositories';
-import { GroupDocument, GroupModel, PostDocument } from '../models';
+import { GroupRepository, PostRepository } from '../repositories';
+import { GroupDocument, PostDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
 
 export const createPost = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const { content, image, groupId }: CreatePostObject = req.body as CreatePostObject;
 
-  // TODO: Should be group repo function
   if (groupId) {
-    const group: GroupDocument = assertExists(await GroupModel.findById(groupId), 'Group');
+    const group: GroupDocument = await GroupRepository.getGroupById(groupId.toString());
     if (!group.members.includes(getObjectId(id))) {
       throw new BadRequestError('Cannot upload a post to a group that the user is not a part of');
     }

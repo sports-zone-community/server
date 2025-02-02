@@ -1,8 +1,6 @@
 import { Document, Model, model, Schema, Types } from 'mongoose';
 import { Provider } from '../enums/provider.enum';
 
-// TODO: User should have an array of groups and an array of chats he is in?
-
 export interface User {
   username: string;
   password: string;
