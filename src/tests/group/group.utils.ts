@@ -10,8 +10,13 @@ export const validMockGroup: CreateGroupObject = {
 
 export const invalidMockGroup: Partial<CreateGroupObject> = { name: validMockGroup.name };
 
-export const createTestGroup = async (createGroupObject: CreateGroupObject, accessToken: string) =>
+export const testCreateGroup = async (createGroupObject: CreateGroupObject, accessToken: string) =>
   await supertest(app)
     .post('/groups')
     .set('Authorization', `Bearer ${accessToken}`)
     .send(createGroupObject);
+
+export const testJoinGroup = async (groupId: string, accessToken: string) =>
+  await supertest(app)
+    .post(`/groups/toggle-join/${groupId}`)
+    .set('Authorization', `Bearer ${accessToken}`);

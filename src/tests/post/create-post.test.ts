@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { PostModel } from '../../models';
 import { CreatePostObject } from '../../validations';
 import { invalidMockPost, testCreatePost, validMockPost } from './post-test.utils';
-import { createTestGroup, validMockGroup } from '../group/group.utils';
+import { testCreateGroup, validMockGroup } from '../group/group.utils';
 import { fakeObjectId } from '../common-test.utils';
 import {
   createAndLoginTestUser,
@@ -39,7 +39,7 @@ describe('POST ROUTES - POST /posts', () => {
   });
 
   it('should create a new post with valid group ID', async () => {
-    const groupResponse = await createTestGroup(validMockGroup, accessToken);
+    const groupResponse = await testCreateGroup(validMockGroup, accessToken);
 
     const groupId = groupResponse.body._id;
     const mockPost: CreatePostObject = { ...validMockPost, groupId };
@@ -75,7 +75,7 @@ describe('POST ROUTES - POST /posts', () => {
   it('should return a bad request error if the user is not a member of the group', async () => {
     const otherUserAccessToken: string = (await createAndLoginTestUser(otherValidMockRegister))
       .accessToken;
-    const groupResponse = await createTestGroup(validMockGroup, otherUserAccessToken);
+    const groupResponse = await testCreateGroup(validMockGroup, otherUserAccessToken);
 
     const groupId = groupResponse.body._id;
     const mockPost: CreatePostObject = { ...validMockPost, groupId };

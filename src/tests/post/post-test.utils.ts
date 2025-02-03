@@ -45,3 +45,9 @@ export const testToggleLike = async (postId: string, accessToken: string) =>
   await supertest(app)
     .post(`/posts/toggle-like/${postId}`)
     .set('Authorization', `Bearer ${accessToken}`);
+
+export const testGetExplorePosts = async (accessToken: string, page: number) => {
+  return supertest(app)
+    .get(`/posts/explore?page=${page}`)
+    .set('Authorization', `Bearer ${accessToken}`);
+};
