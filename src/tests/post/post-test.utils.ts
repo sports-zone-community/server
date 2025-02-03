@@ -20,3 +20,6 @@ export const testGetPostById = async (postId: string, accessToken: string) =>
 
 export const testDeletePost = async (postId: string, accessToken: string) =>
   await supertest(app).delete(`/posts/${postId}`).set('Authorization', `Bearer ${accessToken}`);
+
+export const testGetPostsByUserId = async (accessToken: string) =>
+  await supertest(app).get(`/posts/my-posts`).set('Authorization', `Bearer ${accessToken}`);

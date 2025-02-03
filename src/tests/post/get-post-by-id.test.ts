@@ -3,10 +3,8 @@ import { testCreatePost, testGetPostById, validMockPost } from './post-test.util
 import { PostModel } from '../../models';
 import { fakeObjectId } from '../common-test.utils';
 import {
-  testRegister,
+  createAndLoginTestUser,
   fakeAccessToken,
-  testLogin,
-  validMockLogin,
   validMockRegister,
 } from '../auth/auth-test.utils';
 
@@ -15,12 +13,8 @@ describe('GET ROUTES - GET /posts/:id', () => {
   let postId: string;
 
   beforeEach(async () => {
-    await testRegister(validMockRegister);
-    const loginResponse = await testLogin(validMockLogin);
-    accessToken = loginResponse.body.accessToken;
-
-    const postResponse = await testCreatePost(validMockPost, accessToken);
-    postId = postResponse.body._id;
+    accessToken = (await createAndLoginTestUser(validMockRegister)).accessToken;
+    postId = (await testCreatePost(validMockPost, accessToken)).body._id;
   });
 
   it('should get a post by ID', async () => {

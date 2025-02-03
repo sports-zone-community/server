@@ -5,6 +5,7 @@ import { testCreatePost, invalidMockPost, validMockPost } from './post-test.util
 import { createTestGroup, validMockGroup } from '../group/group.utils';
 import { fakeObjectId } from '../common-test.utils';
 import {
+  createAndLoginTestUser,
   fakeAccessToken,
   testLogin,
   testRegister,
@@ -17,9 +18,7 @@ describe('POST ROUTES - POST /posts', () => {
   let accessToken: string;
 
   beforeEach(async () => {
-    await testRegister(validMockRegister);
-    const loginResponse = await testLogin(validMockLogin);
-    accessToken = loginResponse.body.accessToken;
+    accessToken = (await createAndLoginTestUser(validMockRegister)).accessToken;
   });
 
   it('should create a regular new post', async () => {

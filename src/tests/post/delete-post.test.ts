@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { PostModel } from '../../models';
 import {
+  createAndLoginTestUser,
   testLogin,
   testRegister,
   validMockLogin,
@@ -14,9 +15,7 @@ describe('DELETE ROUTES - DELETE /posts/:id', () => {
   let postId: string;
 
   beforeEach(async () => {
-    await testRegister(validMockRegister);
-
-    accessToken = (await testLogin(validMockLogin)).body.accessToken;
+    accessToken = (await createAndLoginTestUser(validMockRegister)).accessToken;
     postId = (await testCreatePost(validMockPost, accessToken)).body._id;
   });
 
@@ -45,7 +44,8 @@ describe('DELETE ROUTES - DELETE /posts/:id', () => {
     const otherUserEmail = 'other-user@gmail.com';
     const otherUsername = 'other-username';
     await testRegister({ ...validMockRegister, email: otherUserEmail, username: otherUsername });
-    const otherUserAccessToken = (await testLogin({ ...validMockLogin, email: otherUserEmail })).body.accessToken;
+    const otherUserAccessToken = (await testLogin({ ...validMockLogin, email: otherUserEmail }))
+      .body.accessToken;
 
     const response = await testDeletePost(postId, otherUserAccessToken);
 
