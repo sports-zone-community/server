@@ -3,7 +3,7 @@ import { PostModel } from '../../models';
 import { createAndLoginTestUser, validMockRegister } from '../auth/auth-test.utils';
 import { testCreatePost, testGetPostsByUserId, validMockPost } from './post-test.utils';
 
-describe('GET ROUTES - GET /posts/user/:userId', () => {
+describe('POST ROUTES - GET /posts/user/:userId', () => {
   let accessToken: string;
 
   beforeEach(async () => {

@@ -1,4 +1,4 @@
-import { CreatePostObject } from '../../validations';
+import { CreatePostObject, UpdatePostObject } from '../../validations';
 import supertest from 'supertest';
 import { app } from '../../app';
 
@@ -8,6 +8,13 @@ export const validMockPost: CreatePostObject = {
 };
 
 export const invalidMockPost: Partial<CreatePostObject> = { image: validMockPost.image };
+
+export const validMockUpdatePost: UpdatePostObject = {
+  image: 'update-image-url',
+  content: 'Updated post content',
+};
+
+export const invalidMockUpdatePost: UpdatePostObject = { content: 'ab' };
 
 export const testCreatePost = async (createPost: Partial<CreatePostObject>, accessToken: string) =>
   await supertest(app)
@@ -23,3 +30,13 @@ export const testDeletePost = async (postId: string, accessToken: string) =>
 
 export const testGetPostsByUserId = async (accessToken: string) =>
   await supertest(app).get(`/posts/my-posts`).set('Authorization', `Bearer ${accessToken}`);
+
+export const testUpdatePost = async (
+  postId: string,
+  updatePost: UpdatePostObject,
+  accessToken: string,
+) =>
+  await supertest(app)
+    .put(`/posts/${postId}`)
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send(updatePost);

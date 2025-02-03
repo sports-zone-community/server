@@ -17,6 +17,12 @@ export const validMockRegister: RegisterObject = {
   username: 'testuser',
 };
 
+export const otherValidMockRegister: RegisterObject = {
+  ...validMockRegister,
+  email: 'other-mail@gmail.com',
+  username: 'other-username',
+};
+
 export const invalidMockRegister: Partial<RegisterObject> = { email: validMockRegister.email };
 
 export const mockPopulateMock = () => {

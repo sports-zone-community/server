@@ -1,15 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
 import { PostModel } from '../../models';
 import { CreatePostObject } from '../../validations';
-import { testCreatePost, invalidMockPost, validMockPost } from './post-test.utils';
+import { invalidMockPost, testCreatePost, validMockPost } from './post-test.utils';
 import { createTestGroup, validMockGroup } from '../group/group.utils';
 import { fakeObjectId } from '../common-test.utils';
 import {
   createAndLoginTestUser,
   fakeAccessToken,
-  testLogin,
-  testRegister,
-  validMockLogin,
+  otherValidMockRegister,
   validMockRegister,
 } from '../auth/auth-test.utils';
 import { getObjectId } from '../../utils';
@@ -75,10 +73,7 @@ describe('POST ROUTES - POST /posts', () => {
   });
 
   it('should return a bad request error if the user is not a member of the group', async () => {
-    const otherUserMail: string = 'other-user@gmail.com';
-    const otherUsername: string = 'other-username';
-    await testRegister({ ...validMockRegister, email: otherUserMail, username: otherUsername });
-    const otherUserAccessToken = (await testLogin({ ...validMockLogin, email: otherUserMail })).body
+    const otherUserAccessToken: string = (await createAndLoginTestUser(otherValidMockRegister))
       .accessToken;
     const groupResponse = await createTestGroup(validMockGroup, otherUserAccessToken);
 

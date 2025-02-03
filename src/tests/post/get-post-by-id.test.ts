@@ -8,7 +8,7 @@ import {
   validMockRegister,
 } from '../auth/auth-test.utils';
 
-describe('GET ROUTES - GET /posts/:id', () => {
+describe('POST ROUTES - GET /posts/:id', () => {
   let accessToken: string;
   let postId: string;
 
