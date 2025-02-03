@@ -5,6 +5,7 @@ import { Secret, verify } from 'jsonwebtoken';
 import { config } from '../config/config';
 import { GroupRepository } from '../repositories';
 
+// TODO: FIX THIS - TYPES / MOVE STUFF TO UTILS / BETTER ERRORS
 export class SocketService {
   private static readonly TIME_FORMAT_OPTIONS = {
     hour: '2-digit',
