@@ -5,6 +5,5 @@ export * from './comment.utils';
 export * from './common.utils';
 export * from './auth.utils';
 export * from './cors.utils';
-export * from './tests.utils';
 export * from './chat.utils';
 export * from './post.utils';

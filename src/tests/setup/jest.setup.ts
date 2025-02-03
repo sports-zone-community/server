@@ -6,8 +6,6 @@ import { initConfig } from '../../utils';
 dotenv.config({ path: '.env.test' });
 initConfig();
 
-console.log(config.environment);
-
 const dbUrl: string = `mongodb://${config.database.host}:${config.database.port}/${config.database.name}`;
 
 beforeAll(async () => {

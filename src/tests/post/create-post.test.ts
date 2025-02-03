@@ -1,16 +1,24 @@
 import { StatusCodes } from 'http-status-codes';
-import { createTestUser, getObjectId, testLogin } from '../../utils';
 import { PostModel } from '../../models';
 import { CreatePostObject } from '../../validations';
 import { createTestPost, invalidMockPost, validMockPost } from './post-test.utils';
 import { createTestGroup, validMockGroup } from '../group/group.utils';
+import { fakeObjectId } from '../common-test.utils';
+import {
+  fakeAccessToken,
+  testLogin,
+  testRegister,
+  validMockLogin,
+  validMockRegister,
+} from '../auth/auth-test.utils';
+import { getObjectId } from '../../utils';
 
 describe('POST ROUTES - POST /posts', () => {
   let accessToken: string;
 
   beforeEach(async () => {
-    await createTestUser();
-    const loginResponse = await testLogin();
+    await testRegister(validMockRegister);
+    const loginResponse = await testLogin(validMockLogin);
     accessToken = loginResponse.body.accessToken;
   });
 
@@ -25,7 +33,7 @@ describe('POST ROUTES - POST /posts', () => {
   it('should return a not found error if group ID does not exist', async () => {
     const mockPost: CreatePostObject = {
       ...validMockPost,
-      groupId: getObjectId('60d21b4667d0d8992e610c85'),
+      groupId: getObjectId(fakeObjectId),
     };
 
     const response = await createTestPost(mockPost, accessToken);
@@ -54,7 +62,7 @@ describe('POST ROUTES - POST /posts', () => {
   });
 
   it('should return an error if the user is not authenticated', async () => {
-    const response = await createTestPost(validMockPost, 'fake-access-token');
+    const response = await createTestPost(validMockPost, fakeAccessToken);
 
     expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
   });
@@ -67,10 +75,12 @@ describe('POST ROUTES - POST /posts', () => {
     expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
   });
 
-  it('should return a forbidden error if the user is not a member of the group', async () => {
+  it('should return a bad request error if the user is not a member of the group', async () => {
     const otherUserMail: string = 'other-user@gmail.com';
-    await createTestUser(otherUserMail);
-    const otherUserAccessToken = (await testLogin(otherUserMail)).body.accessToken;
+    const otherUsername: string = 'other-username';
+    await testRegister({ ...validMockRegister, email: otherUserMail, username: otherUsername });
+    const otherUserAccessToken = (await testLogin({ ...validMockLogin, email: otherUserMail })).body
+      .accessToken;
     const groupResponse = await createTestGroup(validMockGroup, otherUserAccessToken);
 
     const groupId = groupResponse.body._id;

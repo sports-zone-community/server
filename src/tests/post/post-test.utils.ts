@@ -17,3 +17,8 @@ export const createTestPost = async (
     .post('/posts')
     .set('Authorization', `Bearer ${accessToken}`)
     .send(createPostObject);
+
+export const getTestPostById = async (postId: string, accessToken: string) =>
+  await supertest(app)
+    .get(`/posts/${postId}`)
+    .set('Authorization', `Bearer ${accessToken}`);

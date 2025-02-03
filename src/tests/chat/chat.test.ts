@@ -3,9 +3,9 @@ import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { app } from '../../app';
 import { ChatModel } from '../../models';
-import { createAndLoginTestUser, mockPopulateMock } from '../../utils';
 import { FormattedMessage } from '../../utils/interfaces/chat';
 import { Request } from 'express';
+import { createAndLoginTestUser, mockPopulateMock } from '../auth/auth-test.utils';
 
 describe('CHAT ROUTES', () => {
   let token: string;
@@ -16,7 +16,7 @@ describe('CHAT ROUTES', () => {
   beforeEach(async () => {
     const user1 = await createAndLoginTestUser('user1@example.com');
     const user2 = await createAndLoginTestUser('user2@example.com');
-    token = user1.token;
+    token = user1.accessToken;
     userId = user1.userId;
     otherUserId = user2.userId;
 

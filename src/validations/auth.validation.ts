@@ -2,9 +2,9 @@ import Joi, { ObjectSchema } from 'joi';
 import { User } from '../models';
 import { mongoIdSchema } from './common.validation';
 
-export type RegisterObject = Omit<User, 'tokens'>;
+export type RegisterObject = Pick<User, 'email' | 'name' | 'password' | 'username'>;
 
-export const registerSchema: ObjectSchema<RegisterObject> = Joi.object({
+export const registerSchema: ObjectSchema<RegisterObject> = Joi.object<RegisterObject>({
   email: Joi.string().email().required(),
   name: Joi.string().required().min(3).max(40),
   password: Joi.string().required().min(6).max(30),
@@ -13,7 +13,7 @@ export const registerSchema: ObjectSchema<RegisterObject> = Joi.object({
 
 export type LoginObject = Pick<User, 'email' | 'password'>;
 
-export const loginSchema: ObjectSchema<LoginObject> = Joi.object({
+export const loginSchema: ObjectSchema<LoginObject> = Joi.object<LoginObject>({
   email: Joi.string().email().required(),
   password: Joi.string().required().min(6).max(30),
 });
@@ -34,7 +34,7 @@ export type GoogleUser = {
   picture: string;
 };
 
-export const googleUserSchema: ObjectSchema<GoogleUser> = Joi.object({
+export const googleUserSchema: ObjectSchema<GoogleUser> = Joi.object<GoogleUser>({
   id: Joi.string().required(),
   email: Joi.string().email().required(),
   verified_email: Joi.boolean().required(),
