@@ -29,7 +29,7 @@ export const createPost = async (req: Request, res: Response) => {
     groupId: groupId,
   });
 
-  res.status(StatusCodes.CREATED).json({ post });
+  res.status(StatusCodes.CREATED).json(post);
 };
 
 export const getPostById = async (req: Request, res: Response) => {

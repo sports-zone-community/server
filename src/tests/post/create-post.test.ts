@@ -18,8 +18,8 @@ describe('POST ROUTES - POST /posts', () => {
     const response = await createTestPost(validMockPost, accessToken);
 
     expect(response.status).toBe(StatusCodes.CREATED);
-    expect(response.body.post.image).toBe(validMockPost.image);
-    expect(response.body.post.content).toBe(validMockPost.content);
+    expect(response.body.image).toBe(validMockPost.image);
+    expect(response.body.content).toBe(validMockPost.content);
   });
 
   it('should return a not found error if group ID does not exist', async () => {
@@ -42,9 +42,9 @@ describe('POST ROUTES - POST /posts', () => {
     const response = await createTestPost(mockPost, accessToken);
 
     expect(response.status).toBe(StatusCodes.CREATED);
-    expect(response.body.post.image).toBe(mockPost.image);
-    expect(response.body.post.content).toBe(mockPost.content);
-    expect(response.body.post.groupId).toBe(mockPost.groupId);
+    expect(response.body.image).toBe(mockPost.image);
+    expect(response.body.content).toBe(mockPost.content);
+    expect(response.body.groupId).toBe(mockPost.groupId);
   });
 
   it('should return an error if a required field is missing', async () => {
