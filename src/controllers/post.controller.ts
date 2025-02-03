@@ -63,9 +63,13 @@ export const toggleLike = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const postId: string = req.params.postId;
 
-  await PostRepository.toggleLike(postId, id, await isPostLikedByUser(postId, id));
+  const post: PostDocument = await PostRepository.toggleLike(
+    postId,
+    id,
+    await isPostLikedByUser(postId, id),
+  );
 
-  res.status(StatusCodes.NO_CONTENT).json();
+  res.status(StatusCodes.OK).json(post);
 };
 
 export const getPostsByUserId = async (req: Request, res: Response) => {

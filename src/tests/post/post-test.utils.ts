@@ -40,3 +40,8 @@ export const testUpdatePost = async (
     .put(`/posts/${postId}`)
     .set('Authorization', `Bearer ${accessToken}`)
     .send(updatePost);
+
+export const testToggleLike = async (postId: string, accessToken: string) =>
+  await supertest(app)
+    .post(`/posts/toggle-like/${postId}`)
+    .set('Authorization', `Bearer ${accessToken}`);
