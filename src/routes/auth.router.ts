@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware, validationMiddleware, verifyRefreshTokenMiddleware } from '../middlewares';
 import { AuthController } from '../controllers';
-import { googleLoginSchema, loginSchema, registerSchema, userIdSchema } from '../validations';
+import { googleLoginSchema, loginSchema, registerSchema } from '../validations';
 
 export const authRouter: Router = Router();
 
@@ -18,10 +18,4 @@ authRouter.post(
   '/google',
   validationMiddleware({ bodySchema: googleLoginSchema }),
   AuthController.loginWithGoogle,
-);
-authRouter.post(
-  '/toggle-follow/:userId',
-  authMiddleware,
-  validationMiddleware({ paramsSchema: userIdSchema }),
-  AuthController.toggleFollow,
 );

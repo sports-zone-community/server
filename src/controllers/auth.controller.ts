@@ -3,7 +3,6 @@ import { UserDocument } from '../models';
 import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
-  isFollowingUser,
   LoggedUser,
   signTokens,
   Tokens,
@@ -21,7 +20,7 @@ import {
 import { StatusCodes } from 'http-status-codes';
 import axios from 'axios';
 import { config } from '../config/config';
-import { Provider } from '../enums/provider.enum';
+import { Provider } from '../utils/enums/provider.enum';
 import { ValidationResult } from 'joi';
 
 export const register = async (req: Request, res: Response) => {
@@ -102,21 +101,4 @@ export const loginWithGoogle = async (req: Request, res: Response) => {
   await UserRepository.updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
 
   res.status(StatusCodes.OK).json({ accessToken, refreshToken });
-};
-
-export const toggleFollow = async (req: Request, res: Response) => {
-  const { id }: LoggedUser = req.user;
-  const targetUserId: string = req.params.userId;
-
-  if (id === targetUserId) {
-    throw new BadRequestError('You cannot follow yourself');
-  }
-
-  const user: UserDocument = await UserRepository.toggleFollow(
-    id,
-    targetUserId,
-    await isFollowingUser(id, targetUserId),
-  );
-
-  res.status(StatusCodes.OK).json(user);
 };

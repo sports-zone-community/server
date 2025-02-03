@@ -1,5 +1,5 @@
 import { Document, Model, model, Schema, Types } from 'mongoose';
-import { Provider } from '../enums/provider.enum';
+import { Provider } from '../utils/enums/provider.enum';
 
 export interface User {
   username: string;
