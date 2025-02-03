@@ -1,10 +1,12 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { config } from '../../config/config';
-import { initConfig } from '../../utils/config.utils';
+import { initConfig } from '../../utils';
 
 dotenv.config({ path: '.env.test' });
 initConfig();
+
+console.log(config.environment);
 
 const dbUrl: string = `mongodb://${config.database.host}:${config.database.port}/${config.database.name}`;
 
@@ -30,6 +32,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
+  console.log('Clearing all collections');
   const collections = mongoose.connection.collections;
   for (const key in collections) {
     await collections[key].deleteMany({});

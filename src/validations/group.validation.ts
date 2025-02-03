@@ -8,6 +8,7 @@ export const createGroupSchema: Joi.ObjectSchema<CreateGroupObject> = Joi.object
   {
     name: Joi.string().required().min(2).max(30),
     description: Joi.string().max(200),
+    avatar: Joi.string().uri().required(),
   },
 );
 
