@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { PostModel } from '../../models';
 import { CreatePostObject } from '../../validations';
-import { createTestPost, invalidMockPost, validMockPost } from './post-test.utils';
+import { testCreatePost, invalidMockPost, validMockPost } from './post-test.utils';
 import { createTestGroup, validMockGroup } from '../group/group.utils';
 import { fakeObjectId } from '../common-test.utils';
 import {
@@ -23,7 +23,7 @@ describe('POST ROUTES - POST /posts', () => {
   });
 
   it('should create a regular new post', async () => {
-    const response = await createTestPost(validMockPost, accessToken);
+    const response = await testCreatePost(validMockPost, accessToken);
 
     expect(response.status).toBe(StatusCodes.CREATED);
     expect(response.body.image).toBe(validMockPost.image);
@@ -36,7 +36,7 @@ describe('POST ROUTES - POST /posts', () => {
       groupId: getObjectId(fakeObjectId),
     };
 
-    const response = await createTestPost(mockPost, accessToken);
+    const response = await testCreatePost(mockPost, accessToken);
 
     expect(response.status).toBe(StatusCodes.NOT_FOUND);
   });
@@ -47,7 +47,7 @@ describe('POST ROUTES - POST /posts', () => {
     const groupId = groupResponse.body._id;
     const mockPost: CreatePostObject = { ...validMockPost, groupId };
 
-    const response = await createTestPost(mockPost, accessToken);
+    const response = await testCreatePost(mockPost, accessToken);
 
     expect(response.status).toBe(StatusCodes.CREATED);
     expect(response.body.image).toBe(mockPost.image);
@@ -56,13 +56,13 @@ describe('POST ROUTES - POST /posts', () => {
   });
 
   it('should return an error if a required field is missing', async () => {
-    const response = await createTestPost(invalidMockPost, accessToken);
+    const response = await testCreatePost(invalidMockPost, accessToken);
 
     expect(response.status).toBe(StatusCodes.BAD_REQUEST);
   });
 
   it('should return an error if the user is not authenticated', async () => {
-    const response = await createTestPost(validMockPost, fakeAccessToken);
+    const response = await testCreatePost(validMockPost, fakeAccessToken);
 
     expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
   });
@@ -70,7 +70,7 @@ describe('POST ROUTES - POST /posts', () => {
   it('should return 500 Internal Server Error on failure', async () => {
     jest.spyOn(PostModel, 'create').mockRejectedValue(new Error('Internal Server Error'));
 
-    const response = await createTestPost(validMockPost, accessToken);
+    const response = await testCreatePost(validMockPost, accessToken);
 
     expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
   });
@@ -86,7 +86,7 @@ describe('POST ROUTES - POST /posts', () => {
     const groupId = groupResponse.body._id;
     const mockPost: CreatePostObject = { ...validMockPost, groupId };
 
-    const response = await createTestPost(mockPost, accessToken);
+    const response = await testCreatePost(mockPost, accessToken);
 
     expect(response.status).toBe(StatusCodes.BAD_REQUEST);
   });

@@ -1,10 +1,10 @@
 import { PostRepository } from '../repositories';
-import { UnauthorizedError } from './errors';
+import { ForbiddenError } from './errors';
 import { Types } from 'mongoose';
 
 export const checkPostOwner = async (postId: string, userId: string) => {
   if ((await PostRepository.getPostById(postId)).userId.toString() !== userId) {
-    throw new UnauthorizedError('Not authorized');
+    throw new ForbiddenError('You are not the owner of this post');
   }
 };
 

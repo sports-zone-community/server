@@ -56,7 +56,7 @@ export const deletePost = async (req: Request, res: Response) => {
   await checkPostOwner(postId, id);
   await PostRepository.deletePost(postId);
 
-  res.status(StatusCodes.NO_CONTENT).json({ message: 'Post deleted successfully' });
+  res.status(StatusCodes.OK).json({ message: 'Post deleted successfully' });
 };
 
 export const toggleLike = async (req: Request, res: Response) => {
