@@ -3,7 +3,7 @@ import { config } from '../config/config';
 import { UnauthorizedError } from './errors';
 
 export const getCorsOptions = (): CorsOptions => {
-  const allowedOrigins = config.allowedOrigins;
+  const allowedOrigins: string[] = config.allowedOrigins;
 
   return {
     origin: (
