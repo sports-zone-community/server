@@ -10,3 +10,9 @@ export const testCreateComment = async (
     .post('/comments')
     .set('Authorization', `Bearer ${accessToken}`)
     .send(createComment);
+
+export const testGetCommentsByPostId = async (postId: string, accessToken: string) =>
+  await supertest(app)
+    .get('/comments')
+    .query({ postId })
+    .set('Authorization', `Bearer ${accessToken}`);
