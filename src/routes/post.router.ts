@@ -1,11 +1,17 @@
 import { Router } from 'express';
 import { validationMiddleware } from '../middlewares';
-import { createPostSchema, postIdSchema, updatePostSchema } from '../validations';
+import { createPostSchema, pageSchema, postIdSchema, updatePostSchema } from '../validations';
 import { PostController } from '../controllers';
 
 export const postRouter: Router = Router();
 
-postRouter.get('/', PostController.getPostsByUserId);
+postRouter.get(
+  '/explore',
+  validationMiddleware({ querySchema: pageSchema }),
+  PostController.getExplorePosts,
+);
+
+postRouter.get('/my-posts', PostController.getPostsByUserId);
 
 postRouter.get(
   '/:postId',

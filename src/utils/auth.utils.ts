@@ -6,6 +6,7 @@ import { UserDocument } from '../models';
 import { UserRepository } from '../repositories';
 import { TokenPayload, Tokens } from './types';
 import { config } from '../config/config';
+import { getObjectId } from './common.utils';
 
 export const getAuthHeader = (req: Request): string => {
   const token: string | undefined = req.header('Authorization')?.split(' ')[1];
@@ -49,4 +50,10 @@ export const validateRefreshToken = async (user: UserDocument, token: string) =>
     await UserRepository.updateUser(user.id, { tokens: [] });
     throw new UnauthorizedError('Token not found');
   }
+};
+
+export const isFollowingUser = async (userId: string, targetUserId: string): Promise<boolean> => {
+  const user: UserDocument = await UserRepository.getUserById(userId);
+  const targetUser: UserDocument = await UserRepository.getUserById(targetUserId);
+  return user.following.includes(getObjectId(targetUser.id));
 };

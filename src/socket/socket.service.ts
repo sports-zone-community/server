@@ -1,9 +1,11 @@
 import { Server, Socket } from 'socket.io';
-import { Chat, ChatModel, IMessage, UserModel } from '../models';
+import { Chat, ChatModel, GroupDocument, IMessage, UserModel } from '../models';
 import { Types } from 'mongoose';
 import { Secret, verify } from 'jsonwebtoken';
 import { config } from '../config/config';
+import { GroupRepository } from '../repositories';
 
+// TODO: FIX THIS - TYPES / MOVE STUFF TO UTILS / BETTER ERRORS
 export class SocketService {
   private static readonly TIME_FORMAT_OPTIONS = {
     hour: '2-digit',
@@ -36,8 +38,6 @@ export class SocketService {
       console.log('Socket connected:', socket.id);
 
       this.handleAuthentication(socket);
-
-      this.handlePrivateMessage(socket);
       this.handlePrivateMessage(socket);
       this.handleGroupMessage(socket);
       this.handleChatActivity(socket);
@@ -84,12 +84,12 @@ export class SocketService {
       throw new Error(`User not found: ${userId}`);
     }
 
-    if (user.groups) {
-      for (const groupId of user.groups) {
-        const groupRoom = `group:${groupId.toString()}`;
-        socket.join(groupRoom);
-        console.log(`User ${userId} joined group ${groupId}`);
-      }
+    const groups: GroupDocument[] = await GroupRepository.getGroupsByUserId(userId);
+
+    for (const groupId of groups.map((group: GroupDocument) => group.id)) {
+      const groupRoom = `group:${groupId.toString()}`;
+      socket.join(groupRoom);
+      console.log(`User ${userId} joined group ${groupId}`);
     }
   }
 

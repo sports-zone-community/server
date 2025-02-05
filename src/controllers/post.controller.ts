@@ -1,19 +1,22 @@
 import { Request, Response } from 'express';
-import { BadRequestError, LoggedUser } from '../utils';
+import {
+  BadRequestError,
+  checkPostOwner,
+  getObjectId,
+  isPostLikedByUser,
+  LoggedUser,
+} from '../utils';
 import { CreatePostObject, UpdatePostObject } from '../validations';
-import * as PostRepository from '../repositories/post.repository';
-import { GroupDocument, GroupModel, PostDocument } from '../models';
+import { GroupRepository, PostRepository } from '../repositories';
+import { GroupDocument, PostDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
-import { checkPostOwner, isPostLikedByUser } from '../utils/post.utils';
-import { assertExists, getObjectId } from '../utils/common.utils';
 
 export const createPost = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const { content, image, groupId }: CreatePostObject = req.body as CreatePostObject;
 
-  // TODO: Should be group repo function
   if (groupId) {
-    const group: GroupDocument = assertExists(await GroupModel.findById(groupId), 'Group');
+    const group: GroupDocument = await GroupRepository.getGroupById(groupId.toString());
     if (!group.members.includes(getObjectId(id))) {
       throw new BadRequestError('Cannot upload a post to a group that the user is not a part of');
     }
@@ -70,4 +73,12 @@ export const getPostsByUserId = async (req: Request, res: Response) => {
   const ownPosts: PostDocument[] = await PostRepository.getPostsByUserId(id);
 
   res.status(StatusCodes.OK).json(ownPosts);
+};
+
+export const getExplorePosts = async (req: Request, res: Response) => {
+  const { id }: LoggedUser = req.user;
+  const page: number = Number(req.query.page);
+  const posts: PostDocument[] = await PostRepository.getExplorePosts(id, page);
+
+  res.status(StatusCodes.OK).json(posts);
 };

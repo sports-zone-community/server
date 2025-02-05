@@ -19,7 +19,7 @@ export const validationMiddleware =
     next();
   };
 
-const validateSchema = <T>(schema: Joi.Schema<T>, input: T) => {
+export const validateSchema = <T>(schema: Joi.Schema<T>, input: T) => {
   const { error }: Joi.ValidationResult = schema.validate(input);
 
   if (error) {

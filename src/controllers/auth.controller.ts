@@ -3,6 +3,7 @@ import { UserDocument } from '../models';
 import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
+  LoggedUser,
   signTokens,
   Tokens,
   validateRefreshToken,
@@ -19,7 +20,7 @@ import {
 import { StatusCodes } from 'http-status-codes';
 import axios from 'axios';
 import { config } from '../config/config';
-import { Provider } from '../enums/provider.enum';
+import { Provider } from '../utils/enums/provider.enum';
 import { ValidationResult } from 'joi';
 
 export const register = async (req: Request, res: Response) => {
@@ -45,7 +46,7 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const refresh = async (req: Request, res: Response) => {
-  const { id, token } = req.user;
+  const { id, token }: LoggedUser = req.user;
 
   const user: UserDocument = await UserRepository.getUserById(id);
   await validateRefreshToken(user, token);
@@ -58,7 +59,7 @@ export const refresh = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
-  const { id, token } = req.user;
+  const { id, token }: LoggedUser = req.user;
 
   const user: UserDocument = await UserRepository.getUserById(id);
   await validateRefreshToken(user, token);

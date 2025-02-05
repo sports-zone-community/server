@@ -1,6 +1,9 @@
-import { Post, PostDocument, PostModel } from '../models';
-import { assertExists, getObjectId } from '../utils/common.utils';
+import { UpdateQuery } from 'mongoose';
+import { GroupDocument, Post, PostDocument, PostModel, UserDocument } from '../models';
+import { assertExists, getObjectId } from '../utils';
 import { UpdatePostObject } from '../validations';
+import { config } from '../config/config';
+import { GroupRepository, UserRepository } from '.';
 
 const docType: string = PostModel.modelName;
 
@@ -24,7 +27,9 @@ export const toggleLike = async (
   userId: string,
   isLiked: boolean,
 ): Promise<PostDocument> => {
-  const updateQuery = isLiked ? { $push: { likes: userId } } : { $pull: { likes: userId } };
+  const updateQuery: UpdateQuery<PostDocument> = isLiked
+    ? { $pull: { likes: userId } }
+    : { $addToSet: { likes: userId } };
   return assertExists(
     (await PostModel.findByIdAndUpdate(postId, updateQuery, { new: true })) as PostDocument,
     docType,
@@ -33,3 +38,19 @@ export const toggleLike = async (
 
 export const getPostsByUserId = async (userId: string): Promise<PostDocument[]> =>
   await PostModel.find({ userId: getObjectId(userId) });
+
+export const getExplorePosts = async (userId: string, page: number): Promise<PostDocument[]> => {
+  const user: UserDocument = await UserRepository.getUserById(userId);
+  const groups: GroupDocument[] = await GroupRepository.getGroupsByUserId(userId);
+  const limit: number = config.pageSize;
+
+  return PostModel.find({
+    $or: [
+      { userId: { $in: user.following } },
+      { groupId: { $in: groups.map((group: GroupDocument) => group._id) } },
+    ],
+  })
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
+};

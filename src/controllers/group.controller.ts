@@ -1,59 +1,35 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose';
-import { createGroupSchema, joinGroupSchema } from '../validations/group.validation';
-import { createAndSaveGroup, joinUserToGroup } from '../repository/group.repository';
+import { CreateGroupObject } from '../validations';
 import { GroupDocument } from '../models';
-
-// TODO: in every function - next errors instead of sending them to res
+import { getObjectId, LoggedUser } from '../utils';
+import { GroupRepository } from '../repositories';
+import { isUserJoinedGroup } from '../utils/group.utils';
 
 export const createGroup = async (req: Request, res: Response) => {
-  const { name, description, members } = req.body;
-  const userId = req.user?.id;
+  const { id }: LoggedUser = req.user;
+  const { name, description, avatar }: CreateGroupObject = req.body;
 
-  const { error } = createGroupSchema.validate(req.body);
-  if (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error: error.details[0].message });
-    return;
-  }
+  const group: GroupDocument = await GroupRepository.createGroup({
+    name,
+    description,
+    avatar,
+    creator: getObjectId(id),
+    members: [getObjectId(id)],
+  });
 
-  try {
-    const group: GroupDocument | null = await createAndSaveGroup(
-      { name, description, members },
-      new Types.ObjectId(userId),
-    );
-
-    res.status(StatusCodes.CREATED).json(group);
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
-    return;
-  }
+  res.status(StatusCodes.CREATED).json(group);
 };
 
-export const joinGroup = async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  const { groupId } = req.params;
+export const toggleJoinGroup = async (req: Request, res: Response) => {
+  const { id }: LoggedUser = req.user;
+  const groupId: string = req.params.groupId;
 
-  const { error } = joinGroupSchema.validate({ groupId });
-  if (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error: error.details[0].message });
-    return;
-  }
+  const group: GroupDocument = await GroupRepository.toggleJoinGroup(
+    groupId,
+    id,
+    await isUserJoinedGroup(id, groupId),
+  );
 
-  try {
-    const group: GroupDocument | null = await joinUserToGroup(
-      new Types.ObjectId(groupId),
-      new Types.ObjectId(userId),
-    );
-
-    res.status(StatusCodes.OK).json(group);
-  } catch (error: any) {
-    if (error.message === 'Group not found') {
-      res.status(StatusCodes.NOT_FOUND).json({ error: 'Group not found' });
-      return;
-    }
-
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
-    return;
-  }
+  res.status(StatusCodes.OK).json(group);
 };

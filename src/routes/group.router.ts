@@ -1,9 +1,18 @@
 import { Router } from 'express';
-import { createGroup, joinGroup } from '../controllers/group.controller';
-import { authMiddleware } from '../middlewares';
+import { validationMiddleware } from '../middlewares';
+import { createGroupSchema, groupIdSchema } from '../validations';
+import { GroupController } from '../controllers';
 
 export const groupRouter: Router = Router();
 
-groupRouter.post('/', authMiddleware, createGroup);
-groupRouter.post('/:groupId/join', authMiddleware, joinGroup);
+groupRouter.post(
+  '/',
+  validationMiddleware({ bodySchema: createGroupSchema }),
+  GroupController.createGroup,
+);
 
+groupRouter.post(
+  '/toggle-join/:groupId',
+  validationMiddleware({ paramsSchema: groupIdSchema }),
+  GroupController.toggleJoinGroup,
+);

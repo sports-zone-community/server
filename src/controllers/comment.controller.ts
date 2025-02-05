@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
 import { CreateCommentObject } from '../validations';
 import { CommentRepository, PostRepository } from '../repositories';
-import { LoggedUser } from '../utils';
-import { getObjectId } from '../utils/common.utils';
+import { checkCommentOwner, getObjectId, LoggedUser } from '../utils';
 import { CommentDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
-import { checkCommentOwner } from '../utils/comment.utils';
 
 export const getCommentsByPostId = async (req: Request, res: Response) => {
   const postId: string = req.query.postId as string;
