@@ -2,7 +2,7 @@ import Joi from 'joi';
 import { mongoIdSchema } from './common.validation';
 import { Comment } from '../models';
 
-export type CreateCommentObject = Omit<Comment, 'userId'>;
+export type CreateCommentObject = Pick<Comment, 'content' | 'postId'>;
 
 export const createCommentSchema: Joi.ObjectSchema<CreateCommentObject> =
   Joi.object<CreateCommentObject>({
