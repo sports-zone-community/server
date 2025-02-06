@@ -6,6 +6,7 @@ export interface Post {
   userId: Types.ObjectId;
   groupId?: Types.ObjectId;
   likes: Types.ObjectId[];
+  commentCount: number;
 }
 
 export type PostDocument = Post & Document;
@@ -18,6 +19,7 @@ const postSchema = new Schema<PostDocument>(
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
     groupId: { type: Schema.Types.ObjectId, ref: 'Group' },
     likes: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
+    commentCount: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

@@ -54,3 +54,23 @@ export const getExplorePosts = async (userId: string, page: number): Promise<Pos
     .skip((page - 1) * limit)
     .limit(limit);
 };
+
+export const incrementCommentsCount = async (postId: string): Promise<PostDocument> =>
+  assertExists(
+    (await PostModel.findByIdAndUpdate(
+      postId,
+      { $inc: { commentsCount: 1 } },
+      { new: true },
+    )) as PostDocument,
+    docType,
+  );
+
+export const decrementCommentsCount = async (postId: string): Promise<PostDocument> =>
+  assertExists(
+    (await PostModel.findByIdAndUpdate(
+      postId,
+      { $inc: { commentsCount: -1 } },
+      { new: true },
+    )) as PostDocument,
+    docType,
+  );

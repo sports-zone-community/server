@@ -12,5 +12,5 @@ export const getCommentsByPostId = async (postId: string): Promise<CommentDocume
 export const addComment = async (comment: Comment): Promise<CommentDocument> =>
   await CommentModel.create(comment);
 
-export const deleteComment = async (commentId: string) =>
+export const deleteComment = async (commentId: string): Promise<CommentDocument> =>
   assertExists((await CommentModel.findByIdAndDelete(commentId)) as CommentDocument, docType);

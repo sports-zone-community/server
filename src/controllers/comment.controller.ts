@@ -22,6 +22,7 @@ export const addComment = async (req: Request, res: Response) => {
     content,
     userId: getObjectId(id),
   });
+  await PostRepository.incrementCommentsCount(postId.toString());
 
   res.status(StatusCodes.CREATED).json(comment);
 };
@@ -31,7 +32,8 @@ export const deleteComment = async (req: Request, res: Response) => {
   const commentId: string = req.params.commentId;
 
   await checkCommentOwner(commentId, id);
-  await CommentRepository.deleteComment(commentId);
+  const { postId }: CommentDocument = await CommentRepository.deleteComment(commentId);
+  await PostRepository.decrementCommentsCount(postId.toString());
 
   res.status(StatusCodes.OK).json('Comment was deleted');
 };
