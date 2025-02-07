@@ -7,7 +7,7 @@ export interface User {
   email: string;
   name: string;
   tokens: string[];
-  googleId: string;
+  googleId?: string;
   picture: string;
   provider: Provider;
   following: Types.ObjectId[];
@@ -22,7 +22,7 @@ const userSchema: Schema<UserDocument> = new Schema<UserDocument>({
   name: { type: String, required: true },
   tokens: { type: [String], default: [] },
   googleId: { type: String, sparse: true, unique: true },
-  picture: { type: String },
+  picture: { type: String, default: '' },
   provider: {
     type: String,
     required: true,

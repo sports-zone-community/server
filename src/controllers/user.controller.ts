@@ -20,3 +20,12 @@ export const toggleFollow = async (req: Request, res: Response) => {
 
   res.status(StatusCodes.OK).json(user);
 };
+
+export const getUserDetailsById = async (req: Request, res: Response) => {
+  const userId: string = req.query.userId as string;
+  const user: UserDocument = await UserRepository.getUserById(userId);
+
+  const { password, tokens, ...userWithoutSensitiveData } = user.toObject();
+
+  res.status(StatusCodes.OK).json(userWithoutSensitiveData);
+};
