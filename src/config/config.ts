@@ -23,7 +23,7 @@ export const config: Config = {
   google: {
     userDetailsUrl: process.env.GOOGLE_USER_DETAILS_URL!,
   },
-  pageSize: process.env.PAGE_SIZE ? parseInt(process.env.PAGE_SIZE) : 20,
+  pageSize: process.env.PAGE_SIZE ? parseInt(process.env.PAGE_SIZE) : 5,
 };
 
 export interface Config {

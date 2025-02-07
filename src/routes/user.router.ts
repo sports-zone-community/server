@@ -10,3 +10,9 @@ userRouter.post(
   validationMiddleware({ paramsSchema: userIdSchema }),
   UserController.toggleFollow,
 );
+
+userRouter.get(
+  '/details',
+  validationMiddleware({ querySchema: userIdSchema }),
+  UserController.getUserDetailsById,
+);
