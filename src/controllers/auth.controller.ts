@@ -3,9 +3,8 @@ import { UserDocument } from '../models';
 import { genSalt, hash } from 'bcryptjs';
 import {
   BadRequestError,
+  generateAndSetTokens,
   LoggedUser,
-  signTokens,
-  Tokens,
   validateRefreshToken,
   verifyPassword,
 } from '../utils';
@@ -37,12 +36,11 @@ export const login = async (req: Request, res: Response) => {
   const { email, password }: LoginObject = req.body as LoginObject;
 
   const user: UserDocument = await UserRepository.getUserByFilters({ email });
+
   await verifyPassword(password, user.password);
+  const { accessToken } = await generateAndSetTokens(user, res);
 
-  const { accessToken, refreshToken }: Tokens = signTokens(user.id);
-  await UserRepository.updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
-
-  res.status(StatusCodes.OK).json({ accessToken, refreshToken });
+  res.status(StatusCodes.OK).json({ accessToken });
 };
 
 export const refresh = async (req: Request, res: Response) => {
@@ -50,12 +48,9 @@ export const refresh = async (req: Request, res: Response) => {
 
   const user: UserDocument = await UserRepository.getUserById(id);
   await validateRefreshToken(user, token);
+  const { accessToken } = await generateAndSetTokens(user, res);
 
-  const { accessToken, refreshToken }: Tokens = signTokens(id);
-  user.tokens[user.tokens.indexOf(token)] = refreshToken;
-  await UserRepository.updateUser(id, { tokens: [...user.tokens] });
-
-  res.status(StatusCodes.OK).send({ accessToken, refreshToken });
+  res.status(StatusCodes.OK).send({ accessToken });
 };
 
 export const logout = async (req: Request, res: Response) => {
@@ -67,12 +62,16 @@ export const logout = async (req: Request, res: Response) => {
   user.tokens.splice(user.tokens.indexOf(token), 1);
   await UserRepository.updateUser(id, { tokens: [...user.tokens] });
 
+  res.clearCookie('refreshToken');
   res.status(StatusCodes.OK).send('User logged out successfully');
 };
 
 export const verifyUser = async (req: Request, res: Response) => {
   const user: UserDocument = await UserRepository.getUserById(req.user!.id);
-  res.status(StatusCodes.OK).json({ user });
+
+  const { password, tokens, ...userWithoutSensitiveData } = user.toObject();
+
+  res.status(StatusCodes.OK).json(userWithoutSensitiveData);
 };
 
 export const loginWithGoogle = async (req: Request, res: Response) => {
@@ -97,8 +96,7 @@ export const loginWithGoogle = async (req: Request, res: Response) => {
     picture: value.picture,
   });
 
-  const { accessToken, refreshToken }: Tokens = signTokens(user.id);
-  await UserRepository.updateUser(user.id, { tokens: [...user.tokens, refreshToken] });
+  const { accessToken } = await generateAndSetTokens(user, res);
 
-  res.status(StatusCodes.OK).json({ accessToken, refreshToken });
+  res.status(StatusCodes.OK).json({ accessToken });
 };

@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { Secret, sign, verify } from 'jsonwebtoken';
 import { BadRequestError, UnauthorizedError } from './errors';
 import { compare } from 'bcryptjs';
@@ -17,12 +17,31 @@ export const getAuthHeader = (req: Request): string => {
   return token;
 };
 
-export const signTokens = (userId: string): Tokens => {
-  const accessToken: string = sign({ userId } as TokenPayload, config.jwt.accessTokenSecret, {
-    expiresIn: config.jwt.tokenExpiration,
+export const generateAndSetTokens = async (
+  user: UserDocument,
+  res: Response,
+): Promise<{ accessToken: string }> => {
+  const { accessToken, refreshToken }: Tokens = signTokens(user.id);
+  user.tokens.push(refreshToken);
+  await UserRepository.updateUser(user.id, { tokens: user.tokens });
+
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: config.environment === 'production',
+    sameSite: 'strict',
   });
 
-  const refreshToken: string = sign({ userId } as TokenPayload, config.jwt.refreshTokenSecret);
+  return { accessToken };
+};
+
+const signTokens = (userId: string): Tokens => {
+  const accessToken: string = sign({ userId } as TokenPayload, config.jwt.accessTokenSecret, {
+    expiresIn: config.jwt.accessTokenExpiration,
+  });
+
+  const refreshToken: string = sign({ userId } as TokenPayload, config.jwt.refreshTokenSecret, {
+    expiresIn: config.jwt.refreshTokenExpiration,
+  });
 
   return { accessToken, refreshToken };
 };

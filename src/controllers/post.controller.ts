@@ -10,10 +10,13 @@ import { CreatePostObject, UpdatePostObject } from '../validations';
 import { GroupRepository, PostRepository } from '../repositories';
 import { GroupDocument, PostDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
+import path from 'path';
 
 export const createPost = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
-  const { content, image, groupId }: CreatePostObject = req.body as CreatePostObject;
+  const { content, groupId }: CreatePostObject = req.body as CreatePostObject;
+  const image = req.file;
+  const imagePath = image ? path.join('uploads', image.filename) : undefined;
 
   if (groupId) {
     const group: GroupDocument = await GroupRepository.getGroupById(groupId.toString());
@@ -25,7 +28,7 @@ export const createPost = async (req: Request, res: Response) => {
   const post: PostDocument = await PostRepository.createPost({
     userId: getObjectId(id),
     content,
-    image,
+    image: imagePath,
     groupId: groupId,
   });
 

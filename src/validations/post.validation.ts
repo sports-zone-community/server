@@ -5,7 +5,7 @@ import { mongoIdSchema } from './common.validation';
 export type CreatePostObject = Omit<Post, 'userId' | 'likes'>;
 
 export const createPostSchema: Joi.ObjectSchema<CreatePostObject> = Joi.object<CreatePostObject>({
-  image: Joi.string().required(),
+  // image: Joi.binary().required(),
   content: Joi.string().min(3).max(255).required(),
   groupId: mongoIdSchema.optional(),
 });

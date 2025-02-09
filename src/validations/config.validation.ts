@@ -17,7 +17,8 @@ export const configSchema: Joi.ObjectSchema<Config> = Joi.object<Config>({
   jwt: Joi.object({
     accessTokenSecret: Joi.string().required(),
     refreshTokenSecret: Joi.string().required(),
-    tokenExpiration: Joi.string().required(),
+    accessTokenExpiration: Joi.string().required(),
+    refreshTokenExpiration: Joi.string().required(),
   }).required(),
   google: Joi.object({
     userDetailsUrl: Joi.string().required(),
