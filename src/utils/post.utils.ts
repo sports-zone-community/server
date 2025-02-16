@@ -18,7 +18,7 @@ export const isPostLikedByUser = async (postId: string, userId: string): Promise
 export const deletePostImage = async (postId: string) => {
   const post = await PostRepository.getPostById(postId);
   try {
-    deleteFile(post.image);
+    await deleteFile(post.image);
   } catch (err) {
     console.log(err);
   }

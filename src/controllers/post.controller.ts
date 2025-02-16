@@ -66,8 +66,8 @@ export const deletePost = async (req: Request, res: Response) => {
   const postId: string = req.params.postId;
 
   await checkPostOwner(postId, id);
+  await deletePostImage(postId);
   await PostRepository.deletePost(postId);
-  deletePostImage(postId);
 
   res.status(StatusCodes.NO_CONTENT).json({ message: 'Post deleted successfully' });
 };

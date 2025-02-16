@@ -46,6 +46,7 @@ export const getExplorePosts = async (userId: string, page: number): Promise<Pos
 
   return PostModel.find({
     $or: [
+      { userId: userId },
       { userId: { $in: user.following } },
       { groupId: { $in: groups.map((group: GroupDocument) => group._id) } },
     ],
