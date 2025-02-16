@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import {
   BadRequestError,
   checkPostOwner,
+  deletePostImage,
   getObjectId,
   isPostLikedByUser,
   LoggedUser,
@@ -44,10 +45,18 @@ export const getPostById = async (req: Request, res: Response) => {
 
 export const updatePost = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
-  const postId: string = req.params.postId;
-
+  const { postId } = req.params;
   await checkPostOwner(postId, id);
-  const post: PostDocument = await PostRepository.updatePost(postId, req.body as UpdatePostObject);
+
+  const updatePostObject: UpdatePostObject = req.body;
+
+  const image = req.file;
+  if (image) {
+    deletePostImage(postId);
+    updatePostObject.image = path.join('uploads', image.filename);
+  }
+
+  const post: PostDocument = await PostRepository.updatePost(postId, updatePostObject);
 
   res.status(StatusCodes.OK).json(post);
 };
@@ -58,6 +67,7 @@ export const deletePost = async (req: Request, res: Response) => {
 
   await checkPostOwner(postId, id);
   await PostRepository.deletePost(postId);
+  deletePostImage(postId);
 
   res.status(StatusCodes.NO_CONTENT).json({ message: 'Post deleted successfully' });
 };

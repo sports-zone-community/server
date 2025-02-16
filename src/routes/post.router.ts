@@ -29,6 +29,7 @@ postRouter.post(
 
 postRouter.put(
   '/:postId',
+  upload.single('image'),
   validationMiddleware({ bodySchema: updatePostSchema, paramsSchema: postIdSchema }),
   PostController.updatePost,
 );

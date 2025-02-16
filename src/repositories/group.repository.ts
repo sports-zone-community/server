@@ -4,7 +4,7 @@ import { assertExists } from '../utils';
 
 const docType: string = 'Group';
 
-export const createGroup = async (group: Group): Promise<GroupDocument> => {
+export const createGroup = async (group: Partial<Group>): Promise<GroupDocument> => {
   const newGroup: GroupDocument = await GroupModel.create(group);
 
   await ChatModel.create({

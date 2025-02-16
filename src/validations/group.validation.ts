@@ -2,7 +2,7 @@ import Joi from 'joi';
 import { mongoIdSchema } from './common.validation';
 import { Group } from '../models';
 
-export type CreateGroupObject = Pick<Group, 'name' | 'description' | 'avatar'>;
+export type CreateGroupObject = Pick<Group, 'name' | 'description'>;
 
 export const createGroupSchema: Joi.ObjectSchema<CreateGroupObject> = Joi.object<CreateGroupObject>(
   {
