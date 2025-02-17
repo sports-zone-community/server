@@ -18,7 +18,8 @@ export const config: Config = {
   jwt: {
     accessTokenSecret: process.env.ACCESS_TOKEN_SECRET!,
     refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
-    tokenExpiration: process.env.JWT_TOKEN_EXPIRATION!,
+    accessTokenExpiration: process.env.ACCESS_TOKEN_EXPIRATION!,
+    refreshTokenExpiration: process.env.REFRESH_TOKEN_EXPIRATION!,
   },
   google: {
     userDetailsUrl: process.env.GOOGLE_USER_DETAILS_URL!,
@@ -42,7 +43,8 @@ export interface Config {
   jwt: {
     accessTokenSecret: string;
     refreshTokenSecret: string;
-    tokenExpiration: string;
+    accessTokenExpiration: string;
+    refreshTokenExpiration: string;
   };
   google: {
     userDetailsUrl: string;

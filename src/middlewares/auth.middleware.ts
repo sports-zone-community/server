@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { getAuthHeader, TokenPayload, verifyToken } from '../utils';
+import { getAuthHeader, TokenPayload, UnauthorizedError, verifyToken } from '../utils';
 import { UserRepository } from '../repositories';
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
@@ -16,7 +16,10 @@ export const verifyRefreshTokenMiddleware = (
   res: Response,
   next: NextFunction,
 ): void => {
-  const token: string = getAuthHeader(req);
+  const token: string = req?.cookies?.refreshToken;
+  if (!token) {
+    throw new UnauthorizedError('No refresh token provided');
+  }
   const { userId }: TokenPayload = verifyToken(token, true);
 
   req.user = { id: userId, token };

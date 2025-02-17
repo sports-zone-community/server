@@ -5,7 +5,7 @@ export interface Group {
   description: string;
   creator: Types.ObjectId;
   members: Types.ObjectId[];
-  avatar: string;
+  image?: string;
 }
 
 export type GroupDocument = Group & Document;
@@ -16,7 +16,7 @@ const groupSchema: Schema<GroupDocument> = new Schema<GroupDocument>(
     description: { type: String, required: true },
     creator: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     members: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
-    avatar: { type: String, required: true },
+    image: { type: String },
   },
   { timestamps: true },
 );

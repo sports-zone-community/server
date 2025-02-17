@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validationMiddleware } from '../middlewares';
 import { createPostSchema, pageSchema, postIdSchema, updatePostSchema } from '../validations';
 import { PostController } from '../controllers';
+import { upload } from '../middlewares/upload.middleware';
 
 export const postRouter: Router = Router();
 
@@ -21,12 +22,14 @@ postRouter.get(
 
 postRouter.post(
   '/',
+  upload.single('image'),
   validationMiddleware({ bodySchema: createPostSchema }),
   PostController.createPost,
 );
 
 postRouter.put(
   '/:postId',
+  upload.single('image'),
   validationMiddleware({ bodySchema: updatePostSchema, paramsSchema: postIdSchema }),
   PostController.updatePost,
 );

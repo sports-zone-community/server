@@ -5,15 +5,26 @@ import { GroupDocument } from '../models';
 import { getObjectId, LoggedUser } from '../utils';
 import { GroupRepository } from '../repositories';
 import { isUserJoinedGroup } from '../utils/group.utils';
+import { getGroupsByUserId } from '../repositories/group.repository';
+import path from 'path';
+
+export const getGroups = async (req: Request, res: Response) => {
+  const { id }: LoggedUser = req.user;
+  const groups: GroupDocument[] = await getGroupsByUserId(id);
+
+  res.status(StatusCodes.OK).json(groups);
+};
 
 export const createGroup = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
-  const { name, description, avatar }: CreateGroupObject = req.body;
+  const { name, description }: CreateGroupObject = req.body;
+  const image = req.file;
+  const imagePath = image ? path.join('uploads', image.filename) : undefined;
 
   const group: GroupDocument = await GroupRepository.createGroup({
     name,
     description,
-    avatar,
+    image: imagePath,
     creator: getObjectId(id),
     members: [getObjectId(id)],
   });

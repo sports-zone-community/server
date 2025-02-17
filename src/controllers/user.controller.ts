@@ -18,7 +18,9 @@ export const toggleFollow = async (req: Request, res: Response) => {
     await isFollowingUser(id, targetUserId),
   );
 
-  res.status(StatusCodes.OK).json(user);
+  const { password, tokens, ...userWithoutSensitiveData } = user.toObject();
+
+  res.status(StatusCodes.OK).json(userWithoutSensitiveData);
 };
 
 export const getUserDetailsById = async (req: Request, res: Response) => {

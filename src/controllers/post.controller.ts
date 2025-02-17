@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import {
   BadRequestError,
   checkPostOwner,
+  deletePostImage,
   getObjectId,
   isPostLikedByUser,
   LoggedUser,
@@ -10,10 +11,13 @@ import { CreatePostObject, UpdatePostObject } from '../validations';
 import { GroupRepository, PostRepository } from '../repositories';
 import { GroupDocument, PostDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
+import path from 'path';
 
 export const createPost = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
-  const { content, image, groupId }: CreatePostObject = req.body as CreatePostObject;
+  const { content, groupId }: CreatePostObject = req.body as CreatePostObject;
+  const image = req.file;
+  const imagePath = image ? path.join('uploads', image.filename) : undefined;
 
   if (groupId) {
     const group: GroupDocument = await GroupRepository.getGroupById(groupId.toString());
@@ -25,7 +29,7 @@ export const createPost = async (req: Request, res: Response) => {
   const post: PostDocument = await PostRepository.createPost({
     userId: getObjectId(id),
     content,
-    image,
+    image: imagePath,
     groupId: groupId,
   });
 
@@ -41,10 +45,18 @@ export const getPostById = async (req: Request, res: Response) => {
 
 export const updatePost = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
-  const postId: string = req.params.postId;
-
+  const { postId } = req.params;
   await checkPostOwner(postId, id);
-  const post: PostDocument = await PostRepository.updatePost(postId, req.body as UpdatePostObject);
+
+  const updatePostObject: UpdatePostObject = req.body;
+
+  const image = req.file;
+  if (image) {
+    deletePostImage(postId);
+    updatePostObject.image = path.join('uploads', image.filename);
+  }
+
+  const post: PostDocument = await PostRepository.updatePost(postId, updatePostObject);
 
   res.status(StatusCodes.OK).json(post);
 };
@@ -54,6 +66,7 @@ export const deletePost = async (req: Request, res: Response) => {
   const postId: string = req.params.postId;
 
   await checkPostOwner(postId, id);
+  await deletePostImage(postId);
   await PostRepository.deletePost(postId);
 
   res.status(StatusCodes.NO_CONTENT).json({ message: 'Post deleted successfully' });
