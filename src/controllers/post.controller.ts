@@ -91,7 +91,8 @@ export const getPostsByUserId = async (req: Request, res: Response) => {
 export const getExplorePosts = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const page: number = Number(req.query.page);
-  const posts: PostDocument[] = await PostRepository.getExplorePosts(id, page);
+  const groupId: string = req.query.groupId as string;
+  const posts: PostDocument[] = await PostRepository.getExplorePosts(id, page, groupId);
 
   res.status(StatusCodes.OK).json(posts);
 };

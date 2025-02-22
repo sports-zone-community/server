@@ -4,12 +4,14 @@ import { Chat } from '../../models/chat.model';
 export interface PopulatedUser {
     _id: Types.ObjectId;
     username: string;
-    fullName: string;
+    name: string;
+    picture: string;
 }
   
 export interface PopulatedGroup {
     _id: Types.ObjectId;
     name: string;
+    image: string;
 } 
   
 export interface PopulatedMessage {

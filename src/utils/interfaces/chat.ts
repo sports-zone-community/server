@@ -3,7 +3,7 @@ import { Types } from 'mongoose';
 
 export interface FormattedChat {
     chatId: string;
-    lastMessage: FormattedMessage;
+    lastMessage: FormattedMessage | undefined;
     unreadCount: number;
     chatName?: string;
     isGroupChat?: boolean;
@@ -11,6 +11,7 @@ export interface FormattedChat {
     groupId?: string;
     participants?: PopulatedUser[];
     messages?: FormattedMessage[];
+    image?: string;
 }
 
 export interface FormattedMessage {
