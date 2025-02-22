@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { CreateGroupObject } from '../validations';
-import { GroupDocument } from '../models';
+import { Chat, GroupDocument } from '../models';
 import { getObjectId, LoggedUser } from '../utils';
-import { GroupRepository } from '../repositories';
+import { ChatRepository, GroupRepository } from '../repositories';
 import { isUserJoinedGroup } from '../utils/group.utils';
 import { getGroupsByUserId } from '../repositories/group.repository';
 import path from 'path';
-
+import { Types } from 'mongoose';
 export const getGroups = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const groups: GroupDocument[] = await getGroupsByUserId(id);

@@ -21,7 +21,7 @@ app.use(loggerMiddleware);
 app.use('/uploads', express.static('uploads'));
 app.use('/auth', authRouter);
 app.use('/users', authMiddleware, userRouter);
-app.use('/chats', chatRouter);
+app.use('/chats', authMiddleware, chatRouter);
 app.use('/groups', authMiddleware, groupRouter);
 app.use('/posts', authMiddleware, postRouter);
 app.use('/comments', authMiddleware, commentRouter);

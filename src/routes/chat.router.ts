@@ -5,11 +5,12 @@ import {
   getUnreadMessages,
   getChatMessages,
 } from '../controllers/chat.controller';
-import { authMiddleware } from '../middlewares';
+import { validationMiddleware } from '../middlewares';
+import { chatIdSchema } from '../validations';
 
 export const chatRouter: Router = Router();
 
-chatRouter.get('/', authMiddleware, getUserChats);
-chatRouter.put('/:chatId/read', authMiddleware, markMessagesAsRead);
-chatRouter.get('/messages/unread', authMiddleware, getUnreadMessages);
-chatRouter.get('/:chatId', authMiddleware, getChatMessages);
+chatRouter.get('/', getUserChats);
+chatRouter.put('/:chatId/read', validationMiddleware({ paramsSchema: chatIdSchema }), markMessagesAsRead);
+chatRouter.get('/messages/unread', getUnreadMessages);
+chatRouter.get('/:chatId', validationMiddleware({ paramsSchema: chatIdSchema }), getChatMessages);

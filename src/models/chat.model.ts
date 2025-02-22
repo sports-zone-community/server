@@ -6,11 +6,10 @@ import { IMessage, messageSchema } from './message.model';
 export interface Chat extends Document {
   participants: Types.ObjectId[];
   isGroupChat: boolean;
+  messages: IMessage[];
   groupId?: Types.ObjectId;
   groupName?: string;
-  messages: IMessage[];
   lastMessage?: IMessage;
-  chatName?: string;
 }
 
 export const chatSchema = new Schema<Chat>({
@@ -41,10 +40,7 @@ export const chatSchema = new Schema<Chat>({
     type: [messageSchema],
     default: []
   },
-  lastMessage: messageSchema,
-  chatName: {
-    type: String
-  }
+  lastMessage: messageSchema
 });
 
 export const ChatModel = model<Chat>('Chat', chatSchema); 
