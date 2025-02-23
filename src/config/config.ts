@@ -25,6 +25,10 @@ export const config: Config = {
     userDetailsUrl: process.env.GOOGLE_USER_DETAILS_URL!,
   },
   pageSize: process.env.PAGE_SIZE ? parseInt(process.env.PAGE_SIZE) : 5,
+  footballApi: {
+    apiKey: process.env.FOOTBALL_API_KEY!,
+    footballApiUrl: process.env.FOOTBALL_API_URL!,
+  },
 };
 
 export interface Config {
@@ -50,4 +54,8 @@ export interface Config {
     userDetailsUrl: string;
   };
   pageSize: number;
+  footballApi: {
+    apiKey: string;
+    footballApiUrl: string;
+  };
 }
