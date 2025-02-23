@@ -24,4 +24,8 @@ export const configSchema: Joi.ObjectSchema<Config> = Joi.object<Config>({
     userDetailsUrl: Joi.string().required(),
   }).required(),
   pageSize: Joi.number().min(1).max(100).required(),
+  footballApi: Joi.object({
+    apiKey: Joi.string().required(),
+    footballApiUrl: Joi.string().required(),
+  }).required(),
 });
