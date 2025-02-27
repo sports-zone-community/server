@@ -17,12 +17,18 @@ export const processChatsData = (chats: PopulatedChat[], userId: string): Format
         unreadCount,
         isGroupChat: chat.isGroupChat,
         groupName: chat.isGroupChat ? (chat.groupId as PopulatedGroup)?.name : undefined,
-        image: image
+        image: image,
+        groupId: chat.isGroupChat ? (chat.groupId as PopulatedGroup)?._id.toString() : undefined,
+        participants: chat.participants
       };
     });
 
-    return processedChats;
-  };
+    return processedChats.sort((a, b) => {
+      const timeA = a.lastMessage?.timestamp?.getTime() || 0;
+      const timeB = b.lastMessage?.timestamp?.getTime() || 0;
+      return timeB - timeA;
+    });
+};
 
   export const getUnreadChats = (chatsWithUnread: PopulatedChat[], userId: string): FormattedChat[] => {
     return chatsWithUnread.map((chat: PopulatedChat) => {

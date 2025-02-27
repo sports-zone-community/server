@@ -3,7 +3,18 @@ export const chatRoutesDocs = {
     get: {
       tags: ['Chats'],
       summary: 'Get all user chats',
+      description: 'Requires authentication. User ID is extracted from the JWT token.',
       security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'query',
+          name: 'isGroupChat',
+          schema: { 
+            type: 'boolean'
+          },
+          description: 'Filter for group chats only'
+        }
+      ],
       responses: {
         200: {
           description: 'List of user chats',
@@ -14,30 +25,12 @@ export const chatRoutesDocs = {
                 items: {
                   type: 'object',
                   properties: {
-                    chatId: { 
-                      type: 'string',
-                      example: '66c290f0f0f0f0f0f0f0f0f0'
-                    },
-                    chatName: { 
-                      type: 'string',
-                      example: 'hapoel'
-                    },
-                    unreadCount: { 
-                      type: 'number',
-                      example: 0
-                    },
-                    isGroupChat: { 
-                      type: 'boolean',
-                      example: true
-                    },
-                    groupName: { 
-                      type: 'string',
-                      example: 'hapoel'
-                    },
-                    image: { 
-                      type: 'string',
-                      example: 'uploads/1740257907466.jpg'
-                    }
+                    chatId: { type: 'string' },
+                    chatName: { type: 'string' },
+                    unreadCount: { type: 'number' },
+                    isGroupChat: { type: 'boolean' },
+                    groupName: { type: 'string' },
+                    image: { type: 'string' }
                   }
                 }
               }
@@ -52,6 +45,7 @@ export const chatRoutesDocs = {
     put: {
       tags: ['Chats'],
       summary: 'Mark chat messages as read',
+      description: 'Requires authentication. User ID is extracted from the JWT token.',
       security: [{ bearerAuth: [] }],
       parameters: [
         {
@@ -62,7 +56,20 @@ export const chatRoutesDocs = {
         }
       ],
       responses: {
-        200: { description: 'Messages marked as read' },
+        200: {
+          description: 'Messages marked as read',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  result: { type: 'object' }
+                }
+              }
+            }
+          }
+        },
         401: { description: 'Unauthorized' },
         404: { description: 'Chat not found' }
       }
@@ -72,9 +79,27 @@ export const chatRoutesDocs = {
     get: {
       tags: ['Chats'],
       summary: 'Get unread messages',
+      description: 'Requires authentication. User ID is extracted from the JWT token.',
       security: [{ bearerAuth: [] }],
       responses: {
-        200: { description: 'List of unread messages' },
+        200: {
+          description: 'List of unread messages',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    chatId: { type: 'string' },
+                    unreadCount: { type: 'number' },
+                    lastMessage: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        },
         401: { description: 'Unauthorized' }
       }
     }
@@ -83,6 +108,7 @@ export const chatRoutesDocs = {
     get: {
       tags: ['Chats'],
       summary: 'Get chat messages',
+      description: 'Requires authentication. User ID is extracted from the JWT token.',
       security: [{ bearerAuth: [] }],
       parameters: [
         {
@@ -93,9 +119,52 @@ export const chatRoutesDocs = {
         }
       ],
       responses: {
-        200: { description: 'Chat messages' },
+        200: {
+          description: 'Chat messages',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    messageId: { type: 'string' },
+                    content: { type: 'string' },
+                    sender: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' },
+                        username: { type: 'string' }
+                      }
+                    },
+                    timestamp: { type: 'string' },
+                    formattedTime: { type: 'string' },
+                    isRead: { type: 'boolean' },
+                    read: { 
+                      type: 'array',
+                      items: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         401: { description: 'Unauthorized' },
-        404: { description: 'Chat not found' }
+        404: { 
+          description: 'Chat not found',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: { type: 'string' }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

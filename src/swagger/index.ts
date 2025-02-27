@@ -1,6 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import { chatRoutesDocs } from './routes/chat.docs';
-import { groupRoutesDocs } from './routes/group.docs';
+import { ROUTES_DOCS } from './routesDocs';
+
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -18,10 +18,7 @@ const options = {
         },
       },
     },
-    paths: {
-      ...chatRoutesDocs,
-      ...groupRoutesDocs
-    }
+    paths: ROUTES_DOCS
   },
   apis: [],
 };

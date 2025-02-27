@@ -16,7 +16,7 @@ describe('CHAT ROUTES', () => {
   beforeEach(async () => {
     const user1 = await createAndLoginTestUser('user1@example.com');
     const user2 = await createAndLoginTestUser('user2@example.com');
-    token = user1.token;
+    token = user1.accessToken;
     userId = user1.userId;
     otherUserId = user2.userId;
 
@@ -90,7 +90,7 @@ describe('CHAT ROUTES', () => {
     });
 
     it('should handle undefined user id', async () => {
-      const req = { user: undefined } as Request;
+      const req = { user: undefined } as unknown as Request;
       const response = await supertest(app)
         .get('/chats')
         .set('Authorization', 'Bearer invalid-token');

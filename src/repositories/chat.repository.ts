@@ -7,8 +7,8 @@ import {
 import { ChatModel, Chat } from '../models';
 import { Types, UpdateResult } from 'mongoose';
 
-export const fetchUserChats = async (userId: Types.ObjectId): Promise<PopulatedChat[]> =>
-  ChatModel.find({ participants: userId })
+export const fetchUserChats = async (userId: Types.ObjectId, isGroupChat: boolean): Promise<PopulatedChat[]> =>
+  ChatModel.find({ participants: userId, isGroupChat: isGroupChat })
     .populate<{ participants: PopulatedUser[] }>('participants', 'username name picture')
     .populate<{ groupId: PopulatedGroup }>('groupId', 'name image')
     .populate<{ messages: PopulatedMessage[] }>({
