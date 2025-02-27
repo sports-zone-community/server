@@ -7,9 +7,11 @@ import { FormattedChat, FormattedMessage } from '../utils/interfaces/chat';
 import { PopulatedChat } from '../utils/interfaces/populated';
 import { ChatRepository } from '../repositories';
 
-export const getUserChats = async (req: Request, res: Response) => {
+export const getUserChats = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user?.id;
-  const chats: PopulatedChat[] = await ChatRepository.fetchUserChats(new Types.ObjectId(userId));
+  const isGroupChat: boolean = req.query.isGroupChat === 'true';
+  const chats: PopulatedChat[] = await ChatRepository.fetchUserChats(new Types.ObjectId(userId), isGroupChat);
+  console.log(chats);
   const processedChats: FormattedChat[] = processChatsData(chats, userId!);
   res.status(StatusCodes.OK).json(processedChats);
 };
