@@ -4,7 +4,7 @@ import {
   PopulatedMessage,
   PopulatedUser,
 } from '../utils/interfaces/populated';
-import { ChatModel, Chat } from '../models';
+import { ChatModel, Chat, IMessage } from '../models';
 import { Types, UpdateResult } from 'mongoose';
 
 export const fetchUserChats = async (userId: Types.ObjectId, isGroupChat: boolean): Promise<PopulatedChat[]> =>
@@ -57,3 +57,60 @@ export const getChatById = async (chatId: Types.ObjectId): Promise<PopulatedChat
     .populate<{ groupId: PopulatedGroup }>('groupId', 'name')
     .populate<{ participants: PopulatedUser[] }>('participants', 'username name')
     .populate<{ lastMessage: PopulatedMessage }>('lastMessage.sender', 'username name');
+
+export const findPrivateChat = async (from: string, to: string): Promise<Chat | null> =>
+  await ChatModel.findOne({
+    participants: { $all: [from, to] },
+    isGroupChat: false,
+  }) as Chat;
+
+export const createPrivateChat = async (from: string, to: string): Promise<Chat> =>
+  await ChatModel.create({
+    participants: [from, to],
+    isGroupChat: false,
+    messages: [],
+  });
+
+export const findGroupChat = async (chatId: Types.ObjectId, userId: Types.ObjectId): Promise<Chat | null> =>
+  await ChatModel.findOne({
+    _id: chatId,
+    isGroupChat: true,
+    participants: userId,
+  }) as Chat;
+
+export const updateMessagesReadStatus = async (
+  chatId: Types.ObjectId,
+  userId: Types.ObjectId,
+): Promise<void> => {
+  await ChatModel.updateMany(
+    { _id: chatId },
+    {
+      $addToSet: {
+        'messages.$[elem].read': userId,
+      },
+    },
+    {
+      arrayFilters: [
+        {
+          'elem.sender': { $ne: userId },
+          'elem.read': { $ne: userId },
+        },
+      ],
+    },
+  );
+};
+
+export const getChatByIdAndUserId = async (chatId: Types.ObjectId, userId: Types.ObjectId): Promise<PopulatedChat | null> =>
+  await ChatModel.findOne({
+    _id: chatId,
+    participants: userId,
+  }) as PopulatedChat;
+
+export const saveMessage = async (
+  chat: Chat,
+  message: IMessage
+): Promise<Chat> => {
+  chat.messages.push(message);
+  chat.lastMessage = message;
+  return await chat.save();
+};
