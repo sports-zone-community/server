@@ -1,11 +1,12 @@
 import { Server, Socket } from 'socket.io';
 import { Chat, ChatModel, GroupDocument, IMessage, UserDocument, UserModel } from '../models';
 import { Types } from 'mongoose';
-import { GroupRepository } from '../repositories';
+import { GroupRepository, ChatRepository } from '../repositories';
 import { verifyToken } from '../utils/auth.utils';
 import { UnauthorizedError } from '../utils/errors';
 import { ChatEvent, JoinGroupEvent } from '../utils/interfaces/socketService';
 import { formatMessageTime } from '../utils/functions/formatMessageTime';
+import { PopulatedChat } from '../utils/interfaces/populated';
 
 export class SocketService {
   private activeChats: Map<string, Set<string>> = new Map();
@@ -78,27 +79,19 @@ export class SocketService {
     });
   }
 
-
-  private handlePrivateMessage(socket: Socket) {
+  private async handlePrivateMessage(socket: Socket) {
     socket.on('private message', async ({ content, to, senderName }) => {
       try {
         const from: string = this.getUserId(socket);
 
-        let chat: Chat | null = (await ChatModel.findOne({
-          participants: { $all: [from, to] },
-          isGroupChat: false,
-        })) as Chat;
+        let chat: Chat | null = await ChatRepository.findPrivateChat(from, to);
 
         if (!chat) {
-          chat = await ChatModel.create({
-            participants: [from, to],
-            isGroupChat: false,
-            messages: [],
-          });
+          chat = await ChatRepository.createPrivateChat(from, to);
         }
 
         const chatId: string = chat._id as string;
-        const isRecipientActive: boolean = this.activeChats.get(chatId)?.has(to) ?? false ;
+        const isRecipientActive: boolean = this.activeChats.get(chatId)?.has(to) ?? false;
 
         const read: Types.ObjectId[] = [new Types.ObjectId(from)];
         if (isRecipientActive) {
@@ -114,9 +107,7 @@ export class SocketService {
           formattedTime: formatMessageTime(new Date()),
         } as IMessage;
 
-        chat.messages.push(message);
-        chat.lastMessage = message;
-        await chat.save();
+        await ChatRepository.saveMessage(chat, message);
 
         const chatEvent: ChatEvent = {
           chatId: chat._id as Types.ObjectId,
@@ -153,12 +144,7 @@ export class SocketService {
     socket.on('group message', async ({ content, groupId, senderName }) => {
       try {
         const from: string = this.getUserId(socket);
-
-        const chat: Chat | null = (await ChatModel.findOne({
-          groupId,
-          isGroupChat: true,
-          participants: from,
-        })) as Chat;
+        const chat: Chat | null = await ChatRepository.findGroupChat(new Types.ObjectId(groupId), new Types.ObjectId(from));
 
         if (!chat) {
           throw new Error('Chat not found or user not authorized');
@@ -184,9 +170,7 @@ export class SocketService {
           read,
         } as IMessage;
 
-        chat.messages.push(message);
-        chat.lastMessage = message;
-        await chat.save();
+        await ChatRepository.saveMessage(chat, message);
 
         const chatEvent: ChatEvent = {
           chatId: chat._id as Types.ObjectId,
@@ -197,7 +181,7 @@ export class SocketService {
           }
         };
 
-        socket.to(`group:${groupId}`).emit('new message', {
+        this.io.to(`group:${groupId}`).emit('new message', {
           ...chatEvent,
           message: {
             ...chatEvent.message,
@@ -213,6 +197,7 @@ export class SocketService {
               chatId: chat._id as Types.ObjectId,
               from,
               senderName,
+              ...chatEvent.message,
               timestamp: new Date(),
             });
           }
@@ -225,6 +210,14 @@ export class SocketService {
 
   private handleDisconnect(socket: Socket) {
     socket.on('disconnect', () => {
+      const userId = this.authenticatedSockets.get(socket.id);
+      if (userId) {
+        this.activeChats.forEach((users, chatId) => {
+          if (users.has(userId)) {
+            console.log(`Saving active chat state for user ${userId} in chat ${chatId}`);
+          }
+        });
+      }
       this.authenticatedSockets.delete(socket.id);
       console.log('User disconnected:', socket.id);
     });
@@ -234,16 +227,15 @@ export class SocketService {
     socket.on('enterChat', async ({ chatId }) => {
       try {
         const userId: string = this.getUserId(socket);
-
-        const chat: Chat | null = await ChatModel.findOne({
-          _id: chatId,
-          participants: userId,
-        });
+        
+        const chat: PopulatedChat | null = await ChatRepository.getChatByIdAndUserId(
+          new Types.ObjectId(chatId),
+          new Types.ObjectId(userId),
+        );
 
         if (!chat) {
-          throw new Error('Chat not found or user not authorized');
+          throw new Error('Chat not found');
         }
-
         if (!this.activeChats.has(chatId)) {
           this.activeChats.set(chatId, new Set());
         }
@@ -252,21 +244,9 @@ export class SocketService {
         console.log(`User ${userId} entered chat ${chatId}`);
 
         try {
-          await ChatModel.updateMany(
-            { _id: chatId },
-            {
-              $addToSet: {
-                'messages.$[elem].read': new Types.ObjectId(userId),
-              },
-            },
-            {
-              arrayFilters: [
-                {
-                  'elem.sender': { $ne: userId },
-                  'elem.read': { $ne: new Types.ObjectId(userId) },
-                },
-              ],
-            },
+          await ChatRepository.updateMessagesReadStatus(
+            new Types.ObjectId(chatId),
+            new Types.ObjectId(userId)
           );
         } catch (error) {
           console.error('Error marking messages as read:', error);
