@@ -3,9 +3,12 @@ import { StatusCodes } from 'http-status-codes';
 import { Types, UpdateResult } from 'mongoose';
 
 import { getUnreadChats, processChatsData, sortMessages } from '../utils';
+import { GetSuggestionObject } from '../validations';
 import { FormattedChat, FormattedMessage } from '../utils/interfaces/chat';
 import { PopulatedChat } from '../utils/interfaces/populated';
 import { ChatRepository } from '../repositories';
+import { GenerateContentResult, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
+import { config } from '../config/config';
 
 export const getUserChats = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user?.id;
@@ -56,4 +59,16 @@ export const getChatMessages = async (req: Request, res: Response) => {
   );
 
   res.status(StatusCodes.OK).json(sortedMessages);
+};
+
+const genAI = new GoogleGenerativeAI(config.ai.token);
+const model: GenerativeModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+export const getSuggestion = async (req: Request, res: Response) => {
+  const { prompt }: GetSuggestionObject = req.body;
+
+  const suggestion: GenerateContentResult = await model.generateContent(
+    `${prompt},  Keep it concise and under 50 words`,
+  );
+  res.status(StatusCodes.OK).json({ suggestion: suggestion.response.text() });
 };
