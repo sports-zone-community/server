@@ -25,6 +25,9 @@ export const config: Config = {
     userDetailsUrl: process.env.GOOGLE_USER_DETAILS_URL!,
   },
   pageSize: process.env.PAGE_SIZE ? parseInt(process.env.PAGE_SIZE) : 5,
+  ai: {
+    token: process.env.AI_TOKEN!,
+  },
 };
 
 export interface Config {
@@ -50,4 +53,7 @@ export interface Config {
     userDetailsUrl: string;
   };
   pageSize: number;
+  ai: {
+    token: string;
+  };
 }
