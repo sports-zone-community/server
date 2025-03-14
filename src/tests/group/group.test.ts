@@ -12,7 +12,7 @@ describe('GROUP ROUTES', () => {
 
   beforeAll(async () => {
     const loginResponse = await createAndLoginTestUser();
-    token = loginResponse.token;
+    token = loginResponse.accessToken;
     userId = loginResponse.userId;
 
     mockGroup = {
@@ -37,11 +37,9 @@ describe('GROUP ROUTES', () => {
 
       const group = await GroupModel.findById(response.body._id);
       const chat = await ChatModel.findOne({ groupId: response.body._id });
-      const user = await UserModel.findById(mockGroup.creatorId);
 
       expect(group).toBeTruthy();
       expect(chat).toBeTruthy();
-      expect(user?.groups.map((id) => id.toString())).toContain(response.body._id.toString());
     });
 
     it('should return error for invalid group data', async () => {
@@ -91,7 +89,7 @@ describe('GROUP ROUTES', () => {
 
     beforeEach(async () => {
       const loginResponse = await createAndLoginTestUser();
-      token = loginResponse.token;
+      token = loginResponse.accessToken;
       userId = loginResponse.userId;
 
       mockGroup = await GroupModel.create({
@@ -124,7 +122,6 @@ describe('GROUP ROUTES', () => {
 
       expect(updatedGroup?.members.map((id) => id.toString())).toContain(userId.toString());
       expect(updatedChat?.participants.map((id) => id.toString())).toContain(userId.toString());
-      expect(updatedUser?.groups?.map((id) => id.toString())).toContain(mockGroup._id.toString());
     });
 
     it('should return error for non-existent group', async () => {

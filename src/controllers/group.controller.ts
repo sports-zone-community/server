@@ -7,7 +7,7 @@ import { GroupRepository } from '../repositories';
 import { isUserJoinedGroup } from '../utils/group.utils';
 import { getGroupsByUserId } from '../repositories/group.repository';
 import path from 'path';
-
+import { Types } from 'mongoose';
 export const getGroups = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const groups: GroupDocument[] = await getGroupsByUserId(id);

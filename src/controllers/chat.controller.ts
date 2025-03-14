@@ -3,95 +3,62 @@ import { StatusCodes } from 'http-status-codes';
 import { Types, UpdateResult } from 'mongoose';
 
 import { getUnreadChats, processChatsData, sortMessages } from '../utils';
-import { getChatMessagesSchema, GetSuggestionObject } from '../validations';
+import { GetSuggestionObject } from '../validations';
 import { FormattedChat, FormattedMessage } from '../utils/interfaces/chat';
 import { PopulatedChat } from '../utils/interfaces/populated';
 import { ChatRepository } from '../repositories';
 import { GenerateContentResult, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from '../config/config';
 
-// TODO: in every function - next errors instead of sending them to res
-
-export const getUserChats = async (req: Request, res: Response) => {
+export const getUserChats = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user?.id;
-
-  try {
-    const chats: PopulatedChat[] = await ChatRepository.fetchUserChats(new Types.ObjectId(userId));
-    const processedChats: FormattedChat[] = processChatsData(chats, userId!);
-
-    res.status(StatusCodes.OK).json(processedChats);
-    return;
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
-    return;
-  }
+  const isGroupChat: boolean = req.query.isGroupChat === 'true';
+  const chats: PopulatedChat[] = await ChatRepository.fetchUserChats(new Types.ObjectId(userId), isGroupChat);
+  const processedChats: FormattedChat[] = processChatsData(chats, userId!);
+  res.status(StatusCodes.OK).json(processedChats);
 };
 
 export const markMessagesAsRead = async (req: Request, res: Response) => {
   const { chatId } = req.params;
   const userId = req.user?.id;
 
-  const { error } = getChatMessagesSchema.validate({ chatId });
-  if (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error: error.details[0].message });
-    return;
-  }
-
-  try {
     const result: UpdateResult = await ChatRepository.markMessagesAsReaded(
       new Types.ObjectId(chatId),
       new Types.ObjectId(userId),
     );
-    res.status(StatusCodes.OK).json({ success: true, result });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
-    return;
-  }
+  res.status(StatusCodes.OK).json({ success: true, result });
 };
 
 export const getUnreadMessages = async (req: Request, res: Response) => {
   const userId: string | undefined = req.user?.id;
 
-  try {
-    const chatsWithUnread: PopulatedChat[] = await ChatRepository.getUnreadMsg(
-      new Types.ObjectId(userId),
+  const chatsWithUnread: PopulatedChat[] = await ChatRepository.getUnreadMsg(
+    new Types.ObjectId(userId),
     );
     const unreadMessages: FormattedChat[] = getUnreadChats(chatsWithUnread, userId!);
 
-    res.status(StatusCodes.OK).json(unreadMessages);
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
-  }
+  res.status(StatusCodes.OK).json(unreadMessages);
 };
 
 export const getChatMessages = async (req: Request, res: Response) => {
   const { chatId } = req.params;
   const userId = req.user?.id;
 
-  const { error } = getChatMessagesSchema.validate({ chatId });
-  if (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error: error.details[0].message });
-    return;
-  }
+  const chat: PopulatedChat | null = await ChatRepository.getChatById(new Types.ObjectId(chatId));
 
-  try {
-    const chat: PopulatedChat | null = await ChatRepository.getChatById(new Types.ObjectId(chatId));
-    if (!chat) {
-      res.status(StatusCodes.NOT_FOUND).json({ error: 'Chat not found' });
+  if (!chat) {
+    res.status(StatusCodes.NOT_FOUND).json({ error: 'Chat not found' });
       return;
     }
 
-    const sortedMessages: FormattedMessage[] = sortMessages(chat.messages, userId!);
+  const sortedMessages: FormattedMessage[] = sortMessages(chat.messages, userId!);
 
-    await ChatRepository.markMessagesAsReaded(
-      new Types.ObjectId(chatId),
-      new Types.ObjectId(userId),
-    );
+  await ChatRepository.markMessagesAsReaded(
+    new Types.ObjectId(chatId),
+     new Types.ObjectId(userId),
+  );
 
-    res.status(StatusCodes.OK).json(sortedMessages);
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
-  }
+  res.status(StatusCodes.OK).json(sortedMessages);
 };
 
 const genAI = new GoogleGenerativeAI(config.ai.token);

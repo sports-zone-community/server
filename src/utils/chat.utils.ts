@@ -4,20 +4,31 @@ import { PopulatedGroup } from './interfaces/populated';
 import { FormattedChat, FormattedMessage } from './interfaces/chat';
   
 export const processChatsData = (chats: PopulatedChat[], userId: string): FormattedChat[] => {
-    return chats.map((chat: PopulatedChat) => {
+    const processedChats = chats.map((chat: PopulatedChat) => {
       const lastMessage: PopulatedMessage = chat.messages[chat.messages.length - 1];
       const unreadCount: number = getUnreadCount(chat.messages, userId);
-  
+      const chatName: string | undefined = getChatName(chat, userId);
+      const image: string | undefined = getChatImage(chat, userId);
+
       return {
         chatId: chat._id as string,
-        chatName: getChatName(chat, userId),
+        chatName: chatName,
         lastMessage: formatLastMessage(lastMessage, userId),
         unreadCount,
         isGroupChat: chat.isGroupChat,
-        groupName: chat.isGroupChat ? (chat.groupId as PopulatedGroup)?.name : undefined
+        groupName: chat.isGroupChat ? (chat.groupId as PopulatedGroup)?.name : undefined,
+        image: image,
+        groupId: chat.isGroupChat ? (chat.groupId as PopulatedGroup)?._id.toString() : undefined,
+        participants: chat.participants
       };
     });
-  };
+
+    return processedChats.sort((a, b) => {
+      const timeA = a.lastMessage?.timestamp?.getTime() || 0;
+      const timeB = b.lastMessage?.timestamp?.getTime() || 0;
+      return timeB - timeA;
+    });
+};
 
   export const getUnreadChats = (chatsWithUnread: PopulatedChat[], userId: string): FormattedChat[] => {
     return chatsWithUnread.map((chat: PopulatedChat) => {
@@ -49,7 +60,7 @@ export const processChatsData = (chats: PopulatedChat[], userId: string): Format
         content: message.content,
         sender: {
           id: message.sender._id.toString(),
-          name: (message.sender as unknown as PopulatedUser).fullName,
+          name: (message.sender as unknown as PopulatedUser).name,
           username: (message.sender as unknown as PopulatedUser).username
         },
         timestamp: message.timestamp,
@@ -71,13 +82,15 @@ export const getUnreadCount = (messages: PopulatedMessage[], userId: string): nu
             msg.sender._id.toString() !== userId
     ).length;
   
-const getChatName = (chat: PopulatedChat, userId: string): string | undefined => 
-    chat.isGroupChat 
-      ? (chat.groupId as PopulatedGroup)?.name 
-      : (chat.participants.find((p: PopulatedUser) => p._id.toString() !== userId)?.fullName);
+const getChatName = (chat: PopulatedChat, userId: string): string | undefined => {
+  return chat.isGroupChat 
+    ? (chat.groupId as PopulatedGroup)?.name 
+    : (chat.participants.find((p: PopulatedUser) => p._id.toString() !== userId)?.name);
+};
 
   
-const formatLastMessage = (message: PopulatedMessage, userId: string): FormattedMessage => {
+const formatLastMessage = (message: PopulatedMessage, userId: string): FormattedMessage | undefined => {
+  if(!message) return undefined;
     return {
       messageId: message._id.toString(),
       content: message.content,
@@ -87,17 +100,21 @@ const formatLastMessage = (message: PopulatedMessage, userId: string): Formatted
       read: message.read,
       sender: {
         id: message.sender._id.toString(),
-        name: (message.sender as unknown as PopulatedUser).fullName,
+        name: (message.sender as unknown as PopulatedUser).name,
         username: (message.sender as unknown as PopulatedUser).username
       }
     };
   };
   
+  const getChatImage = (chat: PopulatedChat, userId: string): string | undefined => {
+    return chat.isGroupChat ? (chat.groupId as PopulatedGroup)?.image : 
+    chat.participants.find((p: PopulatedUser) => p._id.toString() !== userId)?.picture;
+  }
   
 const formatTimestamp = (timestamp: Date): string => 
      new Date(timestamp).toLocaleTimeString('he-IL', {
       hour: '2-digit',
       minute: '2-digit'
-    });
+});
 
   

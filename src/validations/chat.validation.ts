@@ -1,7 +1,13 @@
 import Joi from 'joi';
 import { mongoIdSchema } from './common.validation';
 
-export const getChatMessagesSchema = Joi.object({ chatId: mongoIdSchema });
+export interface ChatIdParams {
+    chatId: string;
+  }
+
+export const chatIdSchema: Joi.ObjectSchema<ChatIdParams> = Joi.object<ChatIdParams>({
+  chatId: mongoIdSchema,
+});
 
 export type GetSuggestionObject = { prompt: string };
 export const getSuggestionSchema: Joi.ObjectSchema<GetSuggestionObject> =

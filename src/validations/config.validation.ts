@@ -27,4 +27,8 @@ export const configSchema: Joi.ObjectSchema<Config> = Joi.object<Config>({
   ai: Joi.object({
     token: Joi.string().required(),
   }).required(),
+  footballApi: Joi.object({
+    apiKey: Joi.string().required(),
+    footballApiUrl: Joi.string().required(),
+  }).required(),
 });

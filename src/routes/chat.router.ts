@@ -6,17 +6,18 @@ import {
   getUserChats,
   markMessagesAsRead,
 } from '../controllers/chat.controller';
-import { authMiddleware, validationMiddleware } from '../middlewares';
+import { validationMiddleware } from '../middlewares';
+import { chatIdSchema } from '../validations';
 import { getSuggestionSchema } from '../validations';
 
 export const chatRouter: Router = Router();
 
-chatRouter.get('/', authMiddleware, getUserChats);
-chatRouter.put('/:chatId/read', authMiddleware, markMessagesAsRead);
-chatRouter.get('/messages/unread', authMiddleware, getUnreadMessages);
-chatRouter.get('/:chatId', authMiddleware, getChatMessages);
+chatRouter.get('/', getUserChats);
+chatRouter.put('/:chatId/read', validationMiddleware({ paramsSchema: chatIdSchema }), markMessagesAsRead);
+chatRouter.get('/messages/unread', getUnreadMessages);
+chatRouter.get('/:chatId', validationMiddleware({ paramsSchema: chatIdSchema }), getChatMessages);
 chatRouter.post(
-  '/ai/suggestion',
-  validationMiddleware({ bodySchema: getSuggestionSchema }),
-  getSuggestion,
+    '/ai/suggestion',
+    validationMiddleware({ bodySchema: getSuggestionSchema }),
+    getSuggestion,
 );

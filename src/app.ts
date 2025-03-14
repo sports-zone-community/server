@@ -7,6 +7,9 @@ import { authMiddleware, errorMiddleware, loggerMiddleware } from './middlewares
 import { getCorsOptions } from './utils';
 import { userRouter } from './routes/user.router';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
+import { specs } from './swagger';
+import { footballRouter } from './routes/football.router';
 
 dotenv.config();
 
@@ -21,9 +24,12 @@ app.use(loggerMiddleware);
 app.use('/uploads', express.static('uploads'));
 app.use('/auth', authRouter);
 app.use('/users', authMiddleware, userRouter);
-app.use('/chats', chatRouter);
+app.use('/chats', authMiddleware, chatRouter);
 app.use('/groups', authMiddleware, groupRouter);
 app.use('/posts', authMiddleware, postRouter);
 app.use('/comments', authMiddleware, commentRouter);
+app.use('/football', authMiddleware, footballRouter);
+
+app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs));
 
 app.use(errorMiddleware);

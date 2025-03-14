@@ -25,8 +25,10 @@ export const postIdSchema: Joi.ObjectSchema<PostIdParams> = Joi.object<PostIdPar
 
 export interface PageQuery {
   page: number;
+  groupId: string;
 }
 
 export const pageSchema: Joi.ObjectSchema<PageQuery> = Joi.object<PageQuery>({
   page: Joi.number().min(1).required(),
+  groupId: mongoIdSchema.optional(),
 });

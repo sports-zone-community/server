@@ -39,18 +39,28 @@ export const toggleLike = async (
 export const getPostsByUserId = async (userId: string): Promise<PostDocument[]> =>
   await PostModel.find({ userId: getObjectId(userId) });
 
-export const getExplorePosts = async (userId: string, page: number): Promise<PostDocument[]> => {
+export const getExplorePosts = async (userId: string, page: number, groupId?: string): Promise<PostDocument[]> => {
   const user: UserDocument = await UserRepository.getUserById(userId);
   const groups: GroupDocument[] = await GroupRepository.getGroupsByUserId(userId);
   const limit: number = config.pageSize;
 
-  return PostModel.find({
-    $or: [
-      { userId: userId },
-      { userId: { $in: user.following } },
-      { groupId: { $in: groups.map((group: GroupDocument) => group._id) } },
-    ],
-  })
+  const query = groupId 
+    ? { 
+        groupId: getObjectId(groupId),
+        $or: [
+          { userId: userId },
+          { userId: { $in: user.following } }
+        ]
+      }
+    : {
+        $or: [
+          { userId: userId },
+          { userId: { $in: user.following } },
+          { groupId: { $in: groups.map((group: GroupDocument) => group._id) } }
+        ]
+      };
+
+  return PostModel.find(query)
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
     .limit(limit);
