@@ -1,5 +1,5 @@
 export const footballRoutesDocs = {
-  '/api/football/teams': {
+  '/football/teams': {
     get: {
       tags: ['Football'],
       summary: 'Get teams by league and season',
@@ -10,20 +10,20 @@ export const footballRoutesDocs = {
           in: 'query',
           name: 'league',
           required: true,
-          schema: { 
-            type: 'number'
+          schema: {
+            type: 'number',
           },
-          description: 'League ID'
+          description: 'League ID',
         },
         {
           in: 'query',
           name: 'season',
           required: true,
-          schema: { 
-            type: 'number'
+          schema: {
+            type: 'number',
           },
-          description: 'Season year'
-        }
+          description: 'Season year',
+        },
       ],
       responses: {
         200: {
@@ -44,30 +44,30 @@ export const footballRoutesDocs = {
                         country: { type: 'string' },
                         founded: { type: 'number' },
                         national: { type: 'boolean' },
-                        logo: { type: 'string' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
+                        logo: { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
-        400: { 
+        400: {
           description: 'Invalid input parameters',
           content: {
             'application/json': {
               schema: {
                 type: 'object',
                 properties: {
-                  error: { type: 'string' }
-                }
-              }
-            }
-          }
+                  error: { type: 'string' },
+                },
+              },
+            },
+          },
         },
-        401: { description: 'Unauthorized' }
-      }
-    }
-  }
-}; 
+        401: { description: 'Unauthorized' },
+      },
+    },
+  },
+};

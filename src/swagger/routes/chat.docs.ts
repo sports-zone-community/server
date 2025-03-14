@@ -1,5 +1,5 @@
 export const chatRoutesDocs = {
-  '/api/chats': {
+  '/chats': {
     get: {
       tags: ['Chats'],
       summary: 'Get all user chats',
@@ -9,11 +9,11 @@ export const chatRoutesDocs = {
         {
           in: 'query',
           name: 'isGroupChat',
-          schema: { 
-            type: 'boolean'
+          schema: {
+            type: 'boolean',
           },
-          description: 'Filter for group chats only'
-        }
+          description: 'Filter for group chats only',
+        },
       ],
       responses: {
         200: {
@@ -30,18 +30,18 @@ export const chatRoutesDocs = {
                     unreadCount: { type: 'number' },
                     isGroupChat: { type: 'boolean' },
                     groupName: { type: 'string' },
-                    image: { type: 'string' }
-                  }
-                }
-              }
-            }
-          }
+                    image: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
         },
-        401: { description: 'Unauthorized' }
-      }
-    }
+        401: { description: 'Unauthorized' },
+      },
+    },
   },
-  '/api/chats/{chatId}/read': {
+  '/chats/{chatId}/read': {
     put: {
       tags: ['Chats'],
       summary: 'Mark chat messages as read',
@@ -52,8 +52,8 @@ export const chatRoutesDocs = {
           in: 'path',
           name: 'chatId',
           required: true,
-          schema: { type: 'string' }
-        }
+          schema: { type: 'string' },
+        },
       ],
       responses: {
         200: {
@@ -64,18 +64,18 @@ export const chatRoutesDocs = {
                 type: 'object',
                 properties: {
                   success: { type: 'boolean' },
-                  result: { type: 'object' }
-                }
-              }
-            }
-          }
+                  result: { type: 'object' },
+                },
+              },
+            },
+          },
         },
         401: { description: 'Unauthorized' },
-        404: { description: 'Chat not found' }
-      }
-    }
+        404: { description: 'Chat not found' },
+      },
+    },
   },
-  '/api/chats/messages/unread': {
+  '/chats/messages/unread': {
     get: {
       tags: ['Chats'],
       summary: 'Get unread messages',
@@ -93,18 +93,18 @@ export const chatRoutesDocs = {
                   properties: {
                     chatId: { type: 'string' },
                     unreadCount: { type: 'number' },
-                    lastMessage: { type: 'string' }
-                  }
-                }
-              }
-            }
-          }
+                    lastMessage: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
         },
-        401: { description: 'Unauthorized' }
-      }
-    }
+        401: { description: 'Unauthorized' },
+      },
+    },
   },
-  '/api/chats/{chatId}': {
+  '/chats/{chatId}': {
     get: {
       tags: ['Chats'],
       summary: 'Get chat messages',
@@ -115,8 +115,8 @@ export const chatRoutesDocs = {
           in: 'path',
           name: 'chatId',
           required: true,
-          schema: { type: 'string' }
-        }
+          schema: { type: 'string' },
+        },
       ],
       responses: {
         200: {
@@ -135,37 +135,37 @@ export const chatRoutesDocs = {
                       properties: {
                         id: { type: 'string' },
                         name: { type: 'string' },
-                        username: { type: 'string' }
-                      }
+                        username: { type: 'string' },
+                      },
                     },
                     timestamp: { type: 'string' },
                     formattedTime: { type: 'string' },
                     isRead: { type: 'boolean' },
-                    read: { 
+                    read: {
                       type: 'array',
-                      items: { type: 'string' }
-                    }
-                  }
-                }
-              }
-            }
-          }
+                      items: { type: 'string' },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         401: { description: 'Unauthorized' },
-        404: { 
+        404: {
           description: 'Chat not found',
           content: {
             'application/json': {
               schema: {
                 type: 'object',
                 properties: {
-                  error: { type: 'string' }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}; 
+                  error: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};

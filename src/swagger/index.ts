@@ -5,9 +5,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Chat API',
+      title: 'Sports Zone API',
       version: '1.0.0',
-      description: 'API documentation for the Chat application',
+      description: 'API documentation for the Sports Zone application',
     },
     components: {
       securitySchemes: {
@@ -18,9 +18,9 @@ const options = {
         },
       },
     },
-    paths: ROUTES_DOCS
+    paths: ROUTES_DOCS,
   },
   apis: [],
 };
 
-export const specs = swaggerJsdoc(options); 
+export const specs = swaggerJsdoc(options);
