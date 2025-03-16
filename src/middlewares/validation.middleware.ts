@@ -8,8 +8,8 @@ interface RequestSchemas {
   querySchema?: Joi.Schema;
 }
 
-export const validationMiddleware =
-  (schemas: RequestSchemas) => (req: Request, res: Response, next: NextFunction) => {
+export const validationMiddleware = (schemas: RequestSchemas) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const { bodySchema, paramsSchema, querySchema } = schemas;
 
     bodySchema && validateSchema(bodySchema, req.body);
@@ -18,6 +18,7 @@ export const validationMiddleware =
 
     next();
   };
+};
 
 export const validateSchema = <T>(schema: Joi.Schema<T>, input: T) => {
   const { error }: Joi.ValidationResult = schema.validate(input);
