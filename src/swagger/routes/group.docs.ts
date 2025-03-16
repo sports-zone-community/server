@@ -1,5 +1,5 @@
 export const groupRoutesDocs = {
-  '/api/groups': {
+  '/groups': {
     get: {
       tags: ['Groups'],
       summary: 'Get all groups for current user',
@@ -22,21 +22,22 @@ export const groupRoutesDocs = {
                     creator: { type: 'string' },
                     members: {
                       type: 'array',
-                      items: { type: 'string' }
-                    }
-                  }
-                }
-              }
-            }
-          }
+                      items: { type: 'string' },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
-        401: { description: 'Unauthorized' }
-      }
+        401: { description: 'Unauthorized' },
+      },
     },
     post: {
       tags: ['Groups'],
       summary: 'Create a new group',
-      description: 'Requires authentication. Creates a new group with the current user as creator and member.',
+      description:
+        'Requires authentication. Creates a new group with the current user as creator and member.',
       security: [{ bearerAuth: [] }],
       requestBody: {
         required: true,
@@ -46,23 +47,23 @@ export const groupRoutesDocs = {
               type: 'object',
               required: ['name'],
               properties: {
-                name: { 
+                name: {
                   type: 'string',
-                  description: 'Group name'
+                  description: 'Group name',
                 },
-                description: { 
+                description: {
                   type: 'string',
-                  description: 'Group description'
+                  description: 'Group description',
                 },
                 image: {
                   type: 'string',
                   format: 'binary',
-                  description: 'Group image file'
-                }
-              }
-            }
-          }
-        }
+                  description: 'Group image file',
+                },
+              },
+            },
+          },
+        },
       },
       responses: {
         201: {
@@ -79,23 +80,24 @@ export const groupRoutesDocs = {
                   creator: { type: 'string' },
                   members: {
                     type: 'array',
-                    items: { type: 'string' }
-                  }
-                }
-              }
-            }
-          }
+                    items: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
         },
         400: { description: 'Invalid input' },
-        401: { description: 'Unauthorized' }
-      }
-    }
+        401: { description: 'Unauthorized' },
+      },
+    },
   },
-  '/api/groups/toggle-join/{groupId}': {
+  '/groups/toggle-join/{groupId}': {
     post: {
       tags: ['Groups'],
       summary: 'Join or leave a group',
-      description: 'Requires authentication. Toggles the current user\'s membership in the specified group.',
+      description:
+        "Requires authentication. Toggles the current user's membership in the specified group.",
       security: [{ bearerAuth: [] }],
       parameters: [
         {
@@ -103,8 +105,8 @@ export const groupRoutesDocs = {
           name: 'groupId',
           required: true,
           schema: { type: 'string' },
-          description: 'ID of the group to join/leave'
-        }
+          description: 'ID of the group to join/leave',
+        },
       ],
       responses: {
         200: {
@@ -121,16 +123,16 @@ export const groupRoutesDocs = {
                   creator: { type: 'string' },
                   members: {
                     type: 'array',
-                    items: { type: 'string' }
-                  }
-                }
-              }
-            }
-          }
+                    items: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
         },
         401: { description: 'Unauthorized' },
-        404: { description: 'Group not found' }
-      }
-    }
-  }
-}; 
+        404: { description: 'Group not found' },
+      },
+    },
+  },
+};
