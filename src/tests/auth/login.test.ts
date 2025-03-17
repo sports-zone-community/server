@@ -11,7 +11,9 @@ describe('AUTH ROUTES - POST /auth/login', () => {
 
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body).toHaveProperty('accessToken');
-    expect(response.body).toHaveProperty('refreshToken');
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('refreshToken')]),
+    );
   });
 
   it('should log in again to update refresh token', async () => {
@@ -21,7 +23,9 @@ describe('AUTH ROUTES - POST /auth/login', () => {
 
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body).toHaveProperty('accessToken');
-    expect(response.body).toHaveProperty('refreshToken');
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('refreshToken')]),
+    );
   });
 
   it('should return an error for missing credentials', async () => {
