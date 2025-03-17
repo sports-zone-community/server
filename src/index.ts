@@ -11,7 +11,12 @@ import http from 'http';
 initConfig();
 
 const port = config.port;
-const dbUrl: string = `mongodb://${config.database.host}:${config.database.port}/${config.database.name}`;
+const dbAuth =
+  config.environment === 'production'
+    ? `${config.database.username}:${encodeURIComponent(config.database.password)}@`
+    : '';
+
+const dbUrl: string = `mongodb://${dbAuth}${config.database.host}:${config.database.port}/${config.database.name}`;
 let server: http.Server | https.Server;
 
 if (config.environment === 'production') {

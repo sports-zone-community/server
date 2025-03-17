@@ -13,6 +13,8 @@ export const configSchema: Joi.ObjectSchema<Config> = Joi.object<Config>({
     host: Joi.string().required(),
     port: Joi.number().required(),
     name: Joi.string().required(),
+    username: Joi.string(),
+    password: Joi.string(),
   }).required(),
   jwt: Joi.object({
     accessTokenSecret: Joi.string().required(),
