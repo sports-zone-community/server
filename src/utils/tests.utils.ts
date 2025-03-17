@@ -1,4 +1,4 @@
-import supertest from 'supertest';
+import supertest, { Response } from 'supertest';
 import { app } from '../app';
 import { UserModel } from '../models';
 
@@ -14,9 +14,11 @@ export const createAndLoginTestUser = async (
   const response = await testLogin(email, 'password123');
 
   const user = await UserModel.findOne({ email });
+  const refreshToken = response.header['set-cookie'][0].split(';')[0];
+
   return {
     accessToken: response.body.accessToken,
-    refreshToken: response.body.refreshToken,
+    refreshToken: refreshToken ?? '',
     userId: user?._id as string,
   };
 };
@@ -31,6 +33,9 @@ export const createTestUser = async (email = 'test@example.com') => {
   return await supertest(app).post('/auth/register').send(mockUserRequest);
 };
 
-export const testLogin = async (email = 'test@example.com', password = 'password123') => {
+export const testLogin = async (
+  email = 'test@example.com',
+  password = 'password123',
+): Promise<Response> => {
   return supertest(app).post('/auth/login').send({ email, password });
 };

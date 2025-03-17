@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { config } from '../../config/config';
-import { initConfig } from '../../utils/config.utils';
+import { initConfig } from '../../utils';
 
 dotenv.config({ path: '.env.test' });
 initConfig();
