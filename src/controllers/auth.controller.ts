@@ -27,7 +27,7 @@ export const register = async (req: Request, res: Response) => {
 
   const salt: string = await genSalt(10);
   const encryptedPassword: string = await hash(password, salt);
-  await UserRepository.createUser({ email, password: encryptedPassword, username, name });
+  await UserRepository.createUser({ email, password: encryptedPassword, username, name, picture: 'uploads\\anonymous-user.jpg' });
 
   res.status(StatusCodes.CREATED).json({ message: 'User registered successfully' });
 };

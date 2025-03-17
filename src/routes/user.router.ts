@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { validationMiddleware } from '../middlewares';
-import { userIdSchema } from '../validations';
+import { updateUserSchema, userIdSchema } from '../validations';
 import { UserController } from '../controllers';
 
 export const userRouter: Router = Router();
@@ -15,4 +15,10 @@ userRouter.get(
   '/details',
   validationMiddleware({ querySchema: userIdSchema }),
   UserController.getUserDetailsById,
+);
+
+userRouter.put(
+  '/update',
+  validationMiddleware({ bodySchema: updateUserSchema }),
+  UserController.updateUser,
 );
