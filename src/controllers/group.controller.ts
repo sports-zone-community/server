@@ -7,7 +7,7 @@ import { GroupRepository } from '../repositories';
 import { isUserJoinedGroup } from '../utils/group.utils';
 import { getGroupsByUserId } from '../repositories/group.repository';
 import path from 'path';
-import { Types } from 'mongoose';
+
 export const getGroups = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const groups: GroupDocument[] = await getGroupsByUserId(id);
@@ -35,6 +35,7 @@ export const createGroup = async (req: Request, res: Response) => {
 export const toggleJoinGroup = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const groupId: string = req.params.groupId;
+
 
   const group: GroupDocument = await GroupRepository.toggleJoinGroup(
     groupId,

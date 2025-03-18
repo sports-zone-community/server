@@ -34,7 +34,7 @@ export const toggleJoinGroup = async (
     : { $addToSet: { members: userId } };
   const group: GroupDocument = assertExists(
     (await GroupModel.findByIdAndUpdate(groupId, groupUpdateQuery, { new: true })) as GroupDocument,
-    docType,
+    docType
   );
 
   const chatUpdateQuery: UpdateQuery<Chat> = isJoined
