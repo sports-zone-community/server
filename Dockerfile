@@ -13,6 +13,8 @@ RUN npm install
 # Copy the rest of the application code to the working directory
 COPY . .
 
+COPY .env.production .env
+
 # Build the TypeScript code
 RUN npm run build
 
@@ -20,4 +22,4 @@ RUN npm run build
 EXPOSE 4001
 
 # Define the command to run the application
-CMD ["npm", "start"]
+CMD ["npm", "run", "serve"]
