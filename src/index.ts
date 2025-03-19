@@ -13,7 +13,7 @@ initConfig();
 const port = config.port;
 const dbAuth =
   config.environment === 'production'
-    ? `${config.database.username}:${config.database.password}@`
+    ? `${config.database.username}:${encodeURIComponent(config.database.password)}@`
     : '';
 
 const dbUrl: string = `mongodb://${dbAuth}${config.database.host}:${config.database.port}/${config.database.name}`;
