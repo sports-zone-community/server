@@ -254,7 +254,7 @@ export class SocketService {
   }
 
   private handleFollowUser(socket: Socket) {
-    socket.on('follow user', async ({ followedUserId }) => {
+    socket.on('followUser', async ({ followedUserId }) => {
       try {
         const followerId: string = getUserId(socket, this.authenticatedSockets);
         
@@ -270,7 +270,7 @@ export class SocketService {
         if (!chat) {
           chat = await ChatRepository.createPrivateChat(followerId, followedUserId);
           
-          this.io.to(followerId).emit('chat created', {
+          this.io.to(followerId).emit('chatCreated', {
             chatId: chat._id,
             participants: chat.participants,
             isGroupChat: false,
@@ -281,7 +281,7 @@ export class SocketService {
             }
           });
           
-          this.io.to(followedUserId).emit('chat created', {
+          this.io.to(followedUserId).emit('chatCreated', {
             chatId: chat._id,
             participants: chat.participants,
             isGroupChat: false,
