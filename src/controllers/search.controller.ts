@@ -17,6 +17,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
   const results: SearchResult[] = [
     ...users.map(
       (user: UserDocument): SearchResult => ({
+        id: user.id,
         name: user.name,
         image: user.picture,
         type: 'user',
@@ -24,6 +25,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
     ),
     ...groups.map(
       (group: GroupDocument): SearchResult => ({
+        id: group.id,
         name: group.name,
         image: group.image || '',
         type: 'group',
