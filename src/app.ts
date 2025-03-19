@@ -2,7 +2,14 @@ import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { authRouter, chatRouter, commentRouter, groupRouter, postRouter } from './routes';
+import {
+  authRouter,
+  chatRouter,
+  commentRouter,
+  groupRouter,
+  postRouter,
+  searchRouter,
+} from './routes';
 import { authMiddleware, errorMiddleware, loggerMiddleware } from './middlewares';
 import { getCorsOptions } from './utils';
 import { userRouter } from './routes/user.router';
@@ -29,6 +36,7 @@ app.use('/groups', authMiddleware, groupRouter);
 app.use('/posts', authMiddleware, postRouter);
 app.use('/comments', authMiddleware, commentRouter);
 app.use('/football', authMiddleware, footballRouter);
+app.use('/search', authMiddleware, searchRouter);
 
 app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs));
 
