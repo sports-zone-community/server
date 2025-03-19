@@ -13,3 +13,8 @@ export interface ChatEvent {
     groupId: Types.ObjectId;
     userId: Types.ObjectId;
 }
+
+export interface JoinPrivateChatEvent {
+    userId: Types.ObjectId;
+    toUserId: Types.ObjectId;
+}

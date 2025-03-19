@@ -24,5 +24,5 @@ export const getTeams = async (
     
   cacheService.set(cacheKey, teams);
     
-    return teams;
+  return teams;
 };
