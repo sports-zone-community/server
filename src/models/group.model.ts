@@ -12,7 +12,7 @@ export type GroupDocument = Group & Document;
 
 const groupSchema: Schema<GroupDocument> = new Schema<GroupDocument>(
   {
-    name: { type: String, required: true },
+    name: { type: String, required: true, unique: true },
     description: { type: String, required: true },
     creator: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     members: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
