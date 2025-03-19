@@ -31,7 +31,5 @@ export const search = async (req: Request, res: Response): Promise<void> => {
     ),
   ];
 
-  console.log(results);
-
   res.status(StatusCodes.OK).json(results);
 };
