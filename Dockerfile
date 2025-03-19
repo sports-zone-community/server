@@ -13,6 +13,14 @@ RUN npm install
 # Copy the rest of the application code to the working directory
 COPY . .
 
+# Create a directory for SSL certificates inside the container
+RUN mkdir -p /server/certs
+
+# Copy SSL certificate and key to the container
+COPY certs/server.key /server/certs/server.key
+COPY certs/server.crt /server/certs/server.crt
+
+# Copy the production environment file
 COPY .env.production .env
 
 # Build the TypeScript code
