@@ -15,6 +15,13 @@ export const getGroups = async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).json(groups);
 };
 
+export const getGroupDetailsById = async (req: Request, res: Response) => {
+  const groupId: string = req.params.groupId as string;
+  const group: GroupDocument = await GroupRepository.getGroupById(groupId);
+
+  res.status(StatusCodes.OK).json(group);
+};
+
 export const createGroup = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const { name, description }: CreateGroupObject = req.body;

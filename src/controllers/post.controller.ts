@@ -82,10 +82,19 @@ export const toggleLike = async (req: Request, res: Response) => {
 };
 
 export const getPostsByUserId = async (req: Request, res: Response) => {
-  const { id }: LoggedUser = req.user;
-  const ownPosts: PostDocument[] = await PostRepository.getPostsByUserId(id);
+  const userId: string = req.params.userId;
+  const page: number = Number(req.query.page);
+  const userPosts: PostDocument[] = await PostRepository.getPostsByUserId(userId, page);
 
-  res.status(StatusCodes.OK).json(ownPosts);
+  res.status(StatusCodes.OK).json(userPosts);
+};
+
+export const getPostsByGroupId = async (req: Request, res: Response) => {
+  const groupId: string = req.params.groupId;
+  const page: number = Number(req.query.page);
+  const groupPosts: PostDocument[] = await PostRepository.getPostsByGroupId(groupId, page);
+
+  res.status(StatusCodes.OK).json(groupPosts);
 };
 
 export const getExplorePosts = async (req: Request, res: Response) => {
