@@ -8,5 +8,6 @@ export const getTeamsFromServer = async (req: Request, res: Response): Promise<v
       Number(league),
       Number(season)
     );
+
     res.status(StatusCodes.OK).json(teams);
 }; 

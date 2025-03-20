@@ -43,6 +43,7 @@ export const toggleJoinGroup = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
   const groupId: string = req.params.groupId;
 
+
   const group: GroupDocument = await GroupRepository.toggleJoinGroup(
     groupId,
     id,

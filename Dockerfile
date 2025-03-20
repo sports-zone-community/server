@@ -20,7 +20,7 @@ COPY .env.production .env
 RUN npm run build
 
 # Expose the port the app runs on
-EXPOSE 4001
+EXPOSE 4000
 
 # Define the command to run the application
 CMD ["npm", "run", "serve"]

@@ -61,7 +61,7 @@ export const getChatMessages = async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).json(sortedMessages);
 };
 
-const genAI = new GoogleGenerativeAI(config.ai.token);
+const genAI: GoogleGenerativeAI = new GoogleGenerativeAI(config.ai.token);
 const model: GenerativeModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 export const getSuggestion = async (req: Request, res: Response) => {

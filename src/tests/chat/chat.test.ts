@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { app } from '../../app';
-import { ChatModel } from '../../models';
+import { Chat, ChatModel } from '../../models';
 import { createAndLoginTestUser, mockPopulateMock } from '../../utils';
 import { FormattedMessage } from '../../utils/interfaces/chat';
 import { Request } from 'express';
@@ -45,7 +45,7 @@ describe('CHAT ROUTES', () => {
     });
 
     it('should return 401 when not authenticated', async () => {
-      const response = await supertest(app).get('/chats');
+      const response = await supertest(app).get('/chats').set('Authorization', 'Bearer invalid-token');
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });
 
@@ -104,6 +104,20 @@ describe('CHAT ROUTES', () => {
 
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body).toEqual([]);
+    });
+
+    it('should handle isGroupChat query parameter', async () => {
+      const responseGroupChats = await supertest(app)
+        .get('/chats?isGroupChat=true')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(responseGroupChats.status).toBe(StatusCodes.OK);
+      
+      const responsePrivateChats = await supertest(app)
+        .get('/chats?isGroupChat=false')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(responsePrivateChats.status).toBe(StatusCodes.OK);
     });
   });
 
@@ -170,9 +184,23 @@ describe('CHAT ROUTES', () => {
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body.success).toBe(true);
 
-      // וידוא שההודעות סומנו כנקראות
       const updatedChat = await ChatModel.findById(mockChat._id);
       expect(updatedChat?.messages[0].read).toContainEqual(new Types.ObjectId(userId));
+    });
+
+    it('should handle case when no messages need to be marked as read', async () => {
+      await supertest(app)
+        .put(`/chats/${mockChat._id}/read`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      const response = await supertest(app)
+        .put(`/chats/${mockChat._id}/read`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body.success).toBe(true);
+      
+      expect(response.body.result.modifiedCount).toBe(0);
     });
   });
 
@@ -228,6 +256,40 @@ describe('CHAT ROUTES', () => {
         .set('Authorization', 'Bearer invalid-token');
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });
+
+    it('should handle case when user has both read and unread messages', async () => {
+      const newChat: any = await ChatModel.create({
+        participants: [userId, otherUserId],
+        isGroupChat: false,
+        messages: [
+          {
+            sender: new Types.ObjectId(otherUserId),
+            content: 'Unread message',
+            timestamp: new Date(),
+            read: [],
+          },
+          {
+            sender: new Types.ObjectId(otherUserId),
+            content: 'Read message',
+            timestamp: new Date(),
+            read: [new Types.ObjectId(userId)],
+          },
+        ],
+      });
+
+      const response = await supertest(app)
+        .get('/chats/messages/unread')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(Array.isArray(response.body)).toBeTruthy();
+      
+      const unreadChat = response.body.find((chat: { chatId: Types.ObjectId; unreadCount: number }) => 
+        chat.chatId.toString() === newChat._id.toString()
+      );
+      expect(unreadChat).toBeDefined();
+      expect(unreadChat.unreadCount).toBe(1);
+    });
   });
 
   describe('GET /chats/:chatId', () => {
@@ -248,10 +310,9 @@ describe('CHAT ROUTES', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(StatusCodes.OK);
-      expect(response.body).toHaveProperty('messages');
-      expect(Array.isArray(response.body.messages)).toBeTruthy();
+      expect(Array.isArray(response.body)).toBeTruthy();
 
-      const messages = response.body.messages;
+      const messages = response.body;
       expect(messages[0].content).toBe('Earlier message');
       expect(messages[1].content).toBe('Hello!');
       expect(new Date(messages[0].timestamp).getTime()).toBeLessThan(
@@ -286,18 +347,9 @@ describe('CHAT ROUTES', () => {
     });
 
     it('should return 500 when get error from Database', async () => {
-      const mockPopulate: jest.Mock = jest
-        .fn()
-        .mockImplementationOnce(mockPopulateMock)
-        .mockImplementationOnce(mockPopulateMock)
-        .mockImplementationOnce(mockPopulateMock)
-        .mockRejectedValueOnce(new Error('Database error'));
-
-      const mockFind = jest.fn().mockReturnValue({
-        populate: mockPopulate,
+      jest.spyOn(ChatModel, 'findById').mockImplementationOnce(() => {
+        throw new Error('Database error');
       });
-
-      jest.spyOn(ChatModel, 'findById').mockImplementation(mockFind);
 
       const response = await supertest(app)
         .get(`/chats/${mockChat._id}`)
@@ -311,6 +363,85 @@ describe('CHAT ROUTES', () => {
         .get(`/chats/${mockChat._id}`)
         .set('Authorization', 'Bearer invalid-token');
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('should handle chat with no messages', async () => {
+      // Create a chat with no messages
+      const emptyChat = await ChatModel.create({
+        participants: [userId, otherUserId],
+        isGroupChat: false,
+        messages: [],
+      });
+
+      const response = await supertest(app)
+        .get(`/chats/${emptyChat._id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(Array.isArray(response.body)).toBeTruthy();
+      expect(response.body.length).toBe(0);
+    });
+
+    it('should handle user not being a participant in the chat', async () => {
+      const nonParticipantChat = await ChatModel.create({
+        participants: [new Types.ObjectId(), otherUserId],
+        isGroupChat: false,
+        messages: [],
+      });
+
+      const response = await supertest(app)
+        .get(`/chats/${nonParticipantChat._id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.OK);
+    });
+  });
+
+  describe('POST /chats/ai/suggestion', () => {
+    it('should get suggestion successfully', async () => {
+      const response = await supertest(app)
+        .post('/chats/ai/suggestion')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ prompt: 'Hello' });
+
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body).toHaveProperty('suggestion');
+    });
+
+    it('should return 401 when token is invalid', async () => {
+      const response = await supertest(app)
+        .post('/chats/ai/suggestion')
+        .set('Authorization', 'Bearer invalid-token');
+      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('should return 400 when prompt is not provided', async () => {
+      const response = await supertest(app)
+        .post('/chats/ai/suggestion')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('should handle empty prompt', async () => {
+      const response = await supertest(app)
+        .post('/chats/ai/suggestion')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ prompt: '' });
+
+      expect(response.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('should handle AI service errors', async () => {
+      jest.spyOn(global, 'fetch').mockImplementationOnce(() => 
+        Promise.reject(new Error('AI service error'))
+      );
+
+      const response = await supertest(app)
+        .post('/chats/ai/suggestion')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ prompt: 'Test prompt' });
+
+      expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
   });
 });

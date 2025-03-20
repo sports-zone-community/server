@@ -1,13 +1,11 @@
 import { Server, Socket } from 'socket.io';
 import { Chat, ChatModel, GroupDocument, IMessage, UserDocument, UserModel } from '../models';
 import { Types } from 'mongoose';
-import { GroupRepository, ChatRepository } from '../repositories';
-import { verifyToken } from '../utils/auth.utils';
-import { UnauthorizedError } from '../utils/errors';
+import { GroupRepository, ChatRepository, UserRepository } from '../repositories';
 import { ChatEvent, JoinGroupEvent } from '../utils/interfaces/socketService';
 import { formatMessageTime } from '../utils/functions/formatMessageTime';
 import { PopulatedChat } from '../utils/interfaces/populated';
-
+import { authenticateSocket, getUserId, handleError, joinUserRooms } from './socket.function';
 export class SocketService {
   private activeChats: Map<string, Set<string>> = new Map();
   private authenticatedSockets: Map<string, string> = new Map();
@@ -16,78 +14,39 @@ export class SocketService {
     this.setupSocketHandlers();
   }
 
-  private async authenticateSocket(socket: Socket): Promise<string> {
-    const token: string = socket.handshake.auth.token;
-    try {
-      const { userId } = verifyToken(token);
-      return userId;
-    } catch (error) {
-      throw new Error('Authentication failed');
-    }
-  }
-
-  private getUserId(socket: Socket): string {
-    const userId: string | undefined = this.authenticatedSockets.get(socket.id);
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-    return userId;
-  }
-
   private setupSocketHandlers() {
     this.io.on('connection', async (socket: Socket) => {
       console.log('Socket connected:', socket.id);
 
       try {
-        const userId: string = await this.authenticateSocket(socket);
+        const userId: string = await authenticateSocket(socket);
         this.authenticatedSockets.set(socket.id, userId);
-        await this.joinUserRooms(socket, userId);
+        await joinUserRooms(socket, userId);
         
         this.handlePrivateMessage(socket);
         this.handleGroupMessage(socket);
         this.handleChatActivity(socket);
         this.handleDisconnect(socket);
         this.handleJoinGroup(socket);
+        this.handleFollowUser(socket);
 
         socket.emit('authenticated', { success: true });
       } catch (error) {
-        this.handleError(socket, error as Error);
+        handleError(socket, error as Error);
         socket.disconnect();
       }
-    });
-  }
-
-  private async joinUserRooms(socket: Socket, userId: string) {
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-
-    socket.join(userId);
-    console.log(`User ${userId} joined their personal room`);
-
-    const user: UserDocument | null = await UserModel.findById(userId);
-    if (!user) {
-      throw new Error(`User not found: ${userId}`);
-    }
-
-    const groups: GroupDocument[] = await GroupRepository.getGroupsByUserId(userId);
-
-    groups.forEach((group: GroupDocument) => {
-      const groupRoom: string = `group:${group.id.toString()}`;
-      socket.join(groupRoom);
-      console.log(`User ${userId} joined group ${group.id}`);
     });
   }
 
   private async handlePrivateMessage(socket: Socket) {
     socket.on('private message', async ({ content, to, senderName }) => {
       try {
-        const from: string = this.getUserId(socket);
+        const from: string = getUserId(socket, this.authenticatedSockets);
 
         let chat: Chat | null = await ChatRepository.findPrivateChat(from, to);
 
         if (!chat) {
-          chat = await ChatRepository.createPrivateChat(from, to);
+          throw new Error('Chat not found. Please follow the user first.');
         }
 
         const chatId: string = chat._id as string;
@@ -135,7 +94,7 @@ export class SocketService {
           });
         }
       } catch (error) {
-        this.handleError(socket, error as Error);
+        handleError(socket, error as Error);
       }
     });
   }
@@ -143,7 +102,7 @@ export class SocketService {
   private handleGroupMessage(socket: Socket) {
     socket.on('group message', async ({ content, groupId, senderName }) => {
       try {
-        const from: string = this.getUserId(socket);
+        const from: string = getUserId(socket, this.authenticatedSockets);
         const chat: Chat | null = await ChatRepository.findGroupChat(new Types.ObjectId(groupId), new Types.ObjectId(from));
 
         if (!chat) {
@@ -203,7 +162,7 @@ export class SocketService {
           }
         });
       } catch (error) {
-        this.handleError(socket, error as Error);
+        handleError(socket, error as Error);
       }
     });
   }
@@ -226,7 +185,7 @@ export class SocketService {
   private handleChatActivity(socket: Socket) {
     socket.on('enterChat', async ({ chatId }) => {
       try {
-        const userId: string = this.getUserId(socket);
+        const userId: string = getUserId(socket, this.authenticatedSockets);
         
         const chat: PopulatedChat | null = await ChatRepository.getChatByIdAndUserId(
           new Types.ObjectId(chatId),
@@ -289,16 +248,55 @@ export class SocketService {
           });
         }
       } catch (error) {
-        this.handleError(socket, error as Error);
+        handleError(socket, error as Error);
       }
     });
   }
 
-  private handleError(socket: Socket, error: Error) {
-    console.error('Socket error:', error);
-    socket.emit('error', {
-      message: error.message || 'Internal server error',
-      code: error instanceof UnauthorizedError ? 'UNAUTHORIZED' : 'ERROR'
+  private handleFollowUser(socket: Socket) {
+    socket.on('followUser', async ({ followedUserId }) => {
+      try {
+        const followerId: string = getUserId(socket, this.authenticatedSockets);
+        
+        const follower: UserDocument = await UserRepository.getUserById(followerId);
+        const followed: UserDocument = await UserRepository.getUserById(followedUserId);
+        
+        if (!follower || !followed) {
+          throw new Error('User not found');
+        }
+        
+        let chat: Chat | null = await ChatRepository.findPrivateChat(followerId, followedUserId);
+        
+        if (!chat) {
+          chat = await ChatRepository.createPrivateChat(followerId, followedUserId);
+          
+          this.io.to(followerId).emit('chatCreated', {
+            chatId: chat._id,
+            participants: chat.participants,
+            isGroupChat: false,
+            otherUser: {
+              _id: followed._id,
+              name: followed.name,
+              picture: followed.picture
+            }
+          });
+          
+          this.io.to(followedUserId).emit('chatCreated', {
+            chatId: chat._id,
+            participants: chat.participants,
+            isGroupChat: false,
+            otherUser: {
+              _id: follower._id,
+              name: follower.name,
+              picture: follower.picture
+            }
+          });
+          
+          console.log(`Chat created between ${followerId} and ${followedUserId} due to follow action`);
+        }
+      } catch (error) {
+        handleError(socket, error as Error);
+      }
     });
   }
 }
