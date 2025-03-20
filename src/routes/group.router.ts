@@ -8,6 +8,12 @@ export const groupRouter: Router = Router();
 
 groupRouter.get('/', GroupController.getGroups);
 
+groupRouter.get(
+  '/:groupId',
+  validationMiddleware({ paramsSchema: groupIdSchema }),
+  GroupController.getGroupDetailsById,
+);
+
 groupRouter.post(
   '/',
   upload.single('image'),

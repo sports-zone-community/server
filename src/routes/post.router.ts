@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { validationMiddleware } from '../middlewares';
-import { createPostSchema, pageSchema, postIdSchema, updatePostSchema } from '../validations';
+import {
+  createPostSchema, groupIdSchema,
+  pageSchema,
+  postIdSchema,
+  updatePostSchema,
+  userIdSchema,
+} from '../validations';
 import { PostController } from '../controllers';
 import { upload } from '../middlewares/upload.middleware';
 
@@ -12,7 +18,17 @@ postRouter.get(
   PostController.getExplorePosts,
 );
 
-postRouter.get('/my-posts', PostController.getPostsByUserId);
+postRouter.get(
+  '/user/:userId',
+  validationMiddleware({ paramsSchema: userIdSchema, querySchema: pageSchema }),
+  PostController.getPostsByUserId,
+);
+
+postRouter.get(
+  '/group/:groupId',
+  validationMiddleware({ paramsSchema: groupIdSchema, querySchema: pageSchema }),
+  PostController.getPostsByGroupId,
+);
 
 postRouter.get(
   '/:postId',
