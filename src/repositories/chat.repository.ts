@@ -64,6 +64,9 @@ export const findPrivateChat = async (from: string, to: string): Promise<Chat | 
     isGroupChat: false,
   }) as Chat;
 
+export const findPrivateChatById = async (chatId: Types.ObjectId): Promise<Chat | null> =>
+  await ChatModel.findById(chatId) as Chat;
+
 export const createPrivateChat = async (from: string, to: string): Promise<Chat> =>
   await ChatModel.create({
     participants: [from, to],
@@ -113,4 +116,8 @@ export const saveMessage = async (
   chat.messages.push(message);
   chat.lastMessage = message;
   return await chat.save();
+};
+
+export const deleteChat = async (chatId: Types.ObjectId): Promise<void> => {
+  await ChatModel.findByIdAndDelete(chatId);
 };

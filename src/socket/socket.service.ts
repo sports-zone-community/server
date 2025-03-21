@@ -28,7 +28,9 @@ export class SocketService {
         this.handleChatActivity(socket);
         this.handleDisconnect(socket);
         this.handleJoinGroup(socket);
+        this.handleLeaveGroup(socket);
         this.handleFollowUser(socket);
+        this.handleUnfollowUser(socket);
 
         socket.emit('authenticated', { success: true });
       } catch (error) {
@@ -39,17 +41,25 @@ export class SocketService {
   }
 
   private async handlePrivateMessage(socket: Socket) {
-    socket.on('private message', async ({ content, to, senderName }) => {
+    socket.on('private message', async ({ content, chatId, senderName }) => {
       try {
         const from: string = getUserId(socket, this.authenticatedSockets);
-
-        let chat: Chat | null = await ChatRepository.findPrivateChat(from, to);
+        let chat: Chat | null = await ChatRepository.findPrivateChatById(new Types.ObjectId(chatId));
 
         if (!chat) {
-          throw new Error('Chat not found. Please follow the user first.');
+          throw new Error('Chat not found');
         }
 
-        const chatId: string = chat._id as string;
+        if (chat.isGroupChat) {
+          throw new Error('Cannot send private message to a group chat');
+        }
+
+        const to: string = chat.participants.find(p => p.toString() !== from)?.toString() || '';
+        
+        if (!to) {
+          throw new Error('Recipient not found in chat');
+        }
+
         const isRecipientActive: boolean = this.activeChats.get(chatId)?.has(to) ?? false;
 
         const read: Types.ObjectId[] = [new Types.ObjectId(from)];
@@ -69,16 +79,17 @@ export class SocketService {
         await ChatRepository.saveMessage(chat, message);
 
         const chatEvent: ChatEvent = {
-          chatId: chat._id as Types.ObjectId,
+          chatId: chatId,
           message: {
             content: message.content,
             timestamp: message.timestamp,
             sender: from
           }
         };
-
+        
         this.io.to(to).emit('new message', {
           ...chatEvent,
+          chatId: chatId,
           message: {
             ...chatEvent.message,
             formattedTime: formatMessageTime(message.timestamp),
@@ -241,12 +252,26 @@ export class SocketService {
         });
         
         if (groupChat) {
+          console.log(`Group chat found for group ${data.groupId}`);
           socket.emit('group:joined', {
             success: true,
             groupId: data.groupId,
             chatId: groupChat._id,
           });
         }
+      } catch (error) {
+        console.error('Error joining group:', error);
+        handleError(socket, error as Error);
+      }
+    });
+  }
+
+  private handleLeaveGroup(socket: Socket) {
+    socket.on('leaveGroup', async (data: JoinGroupEvent) => {
+      try {
+        const groupRoom = `group:${data.groupId}`;
+        socket.leave(groupRoom);
+        console.log(`User ${data.userId} left group ${data.groupId}`);
       } catch (error) {
         handleError(socket, error as Error);
       }
@@ -299,4 +324,30 @@ export class SocketService {
       }
     });
   }
+
+  private handleUnfollowUser(socket: Socket) {
+    socket.on('unfollowUser', async ({ followedUserId }) => {
+      console.log('unfollowUser', followedUserId);
+      try {
+        const followerId: string = getUserId(socket, this.authenticatedSockets);
+
+        const follower: UserDocument = await UserRepository.getUserById(followerId);
+        const followed: UserDocument = await UserRepository.getUserById(followedUserId);
+  
+        if (!follower || !followed) {
+          throw new Error('User not found');
+        }
+  
+        let chat: Chat | null = await ChatRepository.findPrivateChat(followerId, followedUserId);
+        
+        if (chat) {
+          await ChatRepository.deleteChat(chat._id as Types.ObjectId);
+          console.log(`Chat deleted between ${followerId} and ${followedUserId} due to unfollow action`);
+        }
+    } catch (error) {
+      handleError(socket, error as Error);
+    }
+    });
+  };
 }
+
