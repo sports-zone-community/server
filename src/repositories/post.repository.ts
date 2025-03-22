@@ -67,7 +67,7 @@ export const getExplorePosts = async (
       }
     : {
         $or: [
-          { userId: { $in: user.following } },
+          { userId: { $in: [...user.following, userId] } },
           { groupId: { $in: groups.map((group: GroupDocument) => group._id) } },
         ],
       };
