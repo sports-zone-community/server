@@ -1,3 +1,4 @@
+export * as AdminController from './admin.controller';
 export * as AuthController from './auth.controller';
 export * as ChatController from './chat.controller';
 export * as CommentController from './comment.controller';

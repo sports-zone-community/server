@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import {
+  adminRouter,
   authRouter,
   chatRouter,
   commentRouter,
@@ -37,6 +38,7 @@ app.use('/posts', authMiddleware, postRouter);
 app.use('/comments', authMiddleware, commentRouter);
 app.use('/football', authMiddleware, footballRouter);
 app.use('/search', authMiddleware, searchRouter);
+app.use('/admin', authMiddleware, adminRouter);
 
 app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs));
 
