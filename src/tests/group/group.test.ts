@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 import supertest from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { app } from '../../app';
-import { ChatModel, GroupDocument, GroupModel, UserModel } from '../../models';
+import { ChatModel, GroupDocument, GroupModel } from '../../models';
 import { createAndLoginTestUser } from '../../utils';
 import { CreateGroupObject } from '../../validations';
 
@@ -44,7 +44,9 @@ describe('GROUP ROUTES', () => {
     });
 
     it('should return 401 when not authenticated', async () => {
-      const response = await supertest(app).get('/groups').set('Authorization', `Bearer invalid-token`);
+      const response = await supertest(app)
+        .get('/groups')
+        .set('Authorization', `Bearer invalid-token`);
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });
 
@@ -62,7 +64,7 @@ describe('GROUP ROUTES', () => {
         .post('/groups')
         .send(mockGroupData)
         .set('Authorization', `Bearer ${token}`);
-         
+
       mockGroup = response.body;
 
       expect(response.status).toBe(StatusCodes.CREATED);
@@ -99,14 +101,15 @@ describe('GROUP ROUTES', () => {
         .send(mockGroupData)
         .set('Authorization', `Bearer ${token}`);
 
-      console.log('response',response.body);
-
       expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(response.body.error).toBe('[InternalServerError]: Database error');
     });
 
     it('should return 401 when not authenticated', async () => {
-      const response = await supertest(app).post('/groups').send(mockGroupData).set('Authorization', `Bearer invalid-token`);
+      const response = await supertest(app)
+        .post('/groups')
+        .send(mockGroupData)
+        .set('Authorization', `Bearer invalid-token`);
 
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });
@@ -152,8 +155,12 @@ describe('GROUP ROUTES', () => {
       const updatedGroup = await GroupModel.findById(mockGroup._id);
       const updatedChat = await ChatModel.findById(mockChat._id);
 
-      expect(updatedGroup?.members.map((id: Types.ObjectId) => id.toString())).toContain(userId.toString());
-      expect(updatedChat?.participants.map((id: Types.ObjectId) => id.toString())).toContain(userId.toString());
+      expect(updatedGroup?.members.map((id: Types.ObjectId) => id.toString())).toContain(
+        userId.toString(),
+      );
+      expect(updatedChat?.participants.map((id: Types.ObjectId) => id.toString())).toContain(
+        userId.toString(),
+      );
     });
 
     it('should return error for non-existent group', async () => {
@@ -204,8 +211,72 @@ describe('GROUP ROUTES', () => {
     });
 
     it('should return 401 when not authenticated', async () => {
-      const response = await supertest(app).post(`/groups/toggle-join/${mockGroup._id}`)
-      .send().set('Authorization', `Bearer invalid-token`);
+      const response = await supertest(app)
+        .post(`/groups/toggle-join/${mockGroup._id}`)
+        .send()
+        .set('Authorization', `Bearer invalid-token`);
+
+      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+    });
+  });
+
+  describe('GET /groups/:groupId', () => {
+    beforeEach(async () => {
+      mockGroup = await GroupModel.create({
+        name: 'Test Group',
+        description: 'Test Description',
+        creator: new Types.ObjectId(),
+        members: [],
+        admins: [new Types.ObjectId()],
+      });
+    });
+
+    it('should get group details by ID successfully', async () => {
+      const response = await supertest(app)
+        .get(`/groups/${mockGroup._id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body).toHaveProperty('name', mockGroup.name);
+      expect(response.body).toHaveProperty('description', mockGroup.description);
+    });
+
+    it('should return error for non-existent group', async () => {
+      const nonExistentGroupId: string = new Types.ObjectId().toString();
+      const response = await supertest(app)
+        .get(`/groups/${nonExistentGroupId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.NOT_FOUND);
+      expect(response.body.error).toBe('[NotFoundError]: Group not found');
+    });
+
+    it('should return error for invalid group ID', async () => {
+      const invalidGroupId: string = 'invalid-id';
+
+      const response = await supertest(app)
+        .get(`/groups/${invalidGroupId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(response.body).toHaveProperty('error');
+    });
+
+    it('should return 500 on database error', async () => {
+      jest.spyOn(GroupModel, 'findById').mockRejectedValue(new Error('Database error'));
+
+      const response = await supertest(app)
+        .get(`/groups/${mockGroup._id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(response.body.error).toBe('[InternalServerError]: Database error');
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const response = await supertest(app)
+        .get(`/groups/${mockGroup._id}`)
+        .set('Authorization', `Bearer invalid-token`);
 
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });

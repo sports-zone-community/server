@@ -3,6 +3,7 @@ import supertest from 'supertest';
 import { app } from '../../app';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
+import path from 'path';
 
 describe('USER ROUTES', () => {
   describe('GET /details', () => {
@@ -100,6 +101,60 @@ describe('USER ROUTES', () => {
 
       expect(response.status).toBe(StatusCodes.NOT_FOUND);
       expect(response.body.error).toContain('User not found');
+    });
+  });
+
+  describe('PUT /update', () => {
+    it('should update the user details', async () => {
+      const { accessToken } = await createAndLoginTestUser();
+
+      const response = await supertest(app)
+        .put('/users/update')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ name: 'Updated Name' });
+
+      console.log({ body: response.body });
+
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body).toHaveProperty('_id');
+    });
+
+    it('should update the user picture', async () => {
+      const { accessToken } = await createAndLoginTestUser();
+
+      await supertest(app)
+        .put('/users/update')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .attach('image', path.resolve(__dirname, '../../../uploads/anonymous-user.jpg'));
+
+      const response2 = await supertest(app)
+        .put('/users/update')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .attach('image', path.resolve(__dirname, '../../../uploads/anonymous-user.jpg'));
+
+      expect(response2.status).toBe(StatusCodes.OK);
+      expect(response2.body).toHaveProperty('_id');
+      expect(response2.body).toHaveProperty('picture');
+    });
+
+    it('should throw error for invalid input', async () => {
+      const { accessToken } = await createAndLoginTestUser();
+
+      const response = await supertest(app)
+        .put('/users/update')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ invalidField: 'Invalid' });
+
+      expect(response.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('should throw error if user is not authenticated', async () => {
+      const response = await supertest(app)
+        .put('/users/update')
+        .send({ name: 'Updated Name' })
+        .set('Authorization', `Bearer invalid-token`);
+
+      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
     });
   });
 });
