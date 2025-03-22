@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validationMiddleware } from '../middlewares';
 import { updateUserSchema, userIdSchema } from '../validations';
 import { UserController } from '../controllers';
+import { upload } from '../middlewares/upload.middleware';
 
 export const userRouter: Router = Router();
 
@@ -19,6 +20,7 @@ userRouter.get(
 
 userRouter.put(
   '/update',
+  upload.single('image'),
   validationMiddleware({ bodySchema: updateUserSchema }),
   UserController.updateUser,
 );

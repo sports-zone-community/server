@@ -4,6 +4,7 @@ import { UserDocument } from '../models';
 import { StatusCodes } from 'http-status-codes';
 import { UserRepository } from '../repositories';
 import path from 'path';
+import { Provider } from '../utils/enums/provider.enum';
 
 export const toggleFollow = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
@@ -35,13 +36,22 @@ export const getUserDetailsById = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   const { id }: LoggedUser = req.user;
-  const userUpdate: Partial<UserDocument> = req.body;
+  const userUpdate = JSON.parse(JSON.stringify(req.body));
   const picture = req.file;
 
+  console.log({ userUpdate });
+  console.log({ picture });
 
   if (picture) {
+    console.log(1);
     const user: UserDocument = await UserRepository.getUserById(id);
-    if (user.picture) {
+    console.log(2);
+    if (
+      user.picture &&
+      !user.picture.includes('anonymous-user.jpg') &&
+      user.provider !== Provider.GOOGLE
+    ) {
+      console.log(3);
       await deleteFile(user.picture);
     }
     userUpdate.picture = path.join('uploads', picture.filename);

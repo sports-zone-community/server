@@ -13,8 +13,9 @@ export const getUserByFilters = async (filters: FilterQuery<UserDocument>): Prom
 export const updateUser = async (
   userId: string,
   userUpdate: Partial<UserDocument>,
-): Promise<UserDocument> =>
-  assertExists((await UserModel.findByIdAndUpdate(userId, userUpdate)) as UserDocument, docType);
+): Promise<UserDocument> => {
+  return assertExists((await UserModel.findByIdAndUpdate(userId, userUpdate)) as UserDocument, docType);
+};
 
 export const createUser = async (user: Partial<User>): Promise<UserDocument> =>
   await UserModel.create(user);
