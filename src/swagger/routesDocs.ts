@@ -3,11 +3,17 @@ import { footballRoutesDocs } from './routes/football.docs';
 import { groupRoutesDocs } from './routes/group.docs';
 import { authRoutesDocs } from './routes/auth.docs';
 import { userRoutesDocs } from './routes/user.docs';
+import { commentRoutesDocs } from './routes/comment.docs';
+import { postRoutesDocs } from './routes/post.docs';
+import { searchRoutesDocs } from './routes/search.docs';
 
 export const ROUTES_DOCS = {
   ...authRoutesDocs,
-  ...userRoutesDocs,
   ...chatRoutesDocs,
-  ...groupRoutesDocs,
+  ...commentRoutesDocs,
   ...footballRoutesDocs,
+  ...groupRoutesDocs,
+  ...postRoutesDocs,
+  ...searchRoutesDocs,
+  ...userRoutesDocs,
 };
