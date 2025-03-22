@@ -92,6 +92,48 @@ export const groupRoutesDocs = {
       },
     },
   },
+  '/groups/{groupId}': {
+    get: {
+      tags: ['Groups'],
+      summary: 'Get group details by ID',
+      description: 'Requires authentication. Returns details of a specific group.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'groupId',
+          required: true,
+          schema: { type: 'string' },
+          description: 'ID of the group to retrieve',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Group details',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string' },
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  image: { type: 'string' },
+                  creator: { type: 'string' },
+                  members: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        404: { description: 'Group not found' },
+      },
+    },
+  },
   '/groups/toggle-join/{groupId}': {
     post: {
       tags: ['Groups'],

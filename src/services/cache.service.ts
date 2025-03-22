@@ -3,7 +3,7 @@ import { Cache, CacheEntry } from '../utils/interfaces/cache';
 export class CacheService {
   private static instance: CacheService;
   private cache: Cache = {};
-  private readonly CACHE_DURATION = 3600000; 
+  private readonly CACHE_DURATION = 3600000; // 1 hour
 
   private constructor() {}
 

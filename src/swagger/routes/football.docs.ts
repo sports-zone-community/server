@@ -35,18 +35,13 @@ export const footballRoutesDocs = {
                 items: {
                   type: 'object',
                   properties: {
-                    team: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'number' },
-                        name: { type: 'string' },
-                        code: { type: 'string' },
-                        country: { type: 'string' },
-                        founded: { type: 'number' },
-                        national: { type: 'boolean' },
-                        logo: { type: 'string' },
-                      },
-                    },
+                    id: { type: 'number' },
+                    name: { type: 'string' },
+                    code: { type: 'string' },
+                    country: { type: 'string' },
+                    founded: { type: 'number' },
+                    national: { type: 'boolean' },
+                    logo: { type: 'string' },
                   },
                 },
               },
@@ -67,6 +62,19 @@ export const footballRoutesDocs = {
           },
         },
         401: { description: 'Unauthorized' },
+        500: {
+          description: 'Internal server error or external API error',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
       },
     },
   },

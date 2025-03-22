@@ -30,7 +30,42 @@ export const chatRoutesDocs = {
                     unreadCount: { type: 'number' },
                     isGroupChat: { type: 'boolean' },
                     groupName: { type: 'string' },
+                    groupId: { type: 'string' },
                     image: { type: 'string' },
+                    lastMessage: {
+                      type: 'object',
+                      properties: {
+                        messageId: { type: 'string' },
+                        content: { type: 'string' },
+                        sender: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'string' },
+                            name: { type: 'string' },
+                            username: { type: 'string' },
+                          },
+                        },
+                        timestamp: { type: 'string', format: 'date-time' },
+                        formattedTime: { type: 'string' },
+                        isRead: { type: 'boolean' },
+                        read: {
+                          type: 'array',
+                          items: { type: 'string' },
+                        },
+                      },
+                    },
+                    participants: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          _id: { type: 'string' },
+                          name: { type: 'string' },
+                          username: { type: 'string' },
+                          picture: { type: 'string' },
+                        },
+                      },
+                    },
                   },
                 },
               },
@@ -92,8 +127,43 @@ export const chatRoutesDocs = {
                   type: 'object',
                   properties: {
                     chatId: { type: 'string' },
+                    chatName: { type: 'string' },
                     unreadCount: { type: 'number' },
-                    lastMessage: { type: 'string' },
+                    isGroupChat: { type: 'boolean' },
+                    groupName: { type: 'string' },
+                    participants: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          _id: { type: 'string' },
+                          name: { type: 'string' },
+                          username: { type: 'string' },
+                        },
+                      },
+                    },
+                    lastMessage: {
+                      type: 'object',
+                      properties: {
+                        messageId: { type: 'string' },
+                        content: { type: 'string' },
+                        sender: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'string' },
+                            name: { type: 'string' },
+                            username: { type: 'string' },
+                          },
+                        },
+                        timestamp: { type: 'string', format: 'date-time' },
+                        formattedTime: { type: 'string' },
+                        isRead: { type: 'boolean' },
+                        read: {
+                          type: 'array',
+                          items: { type: 'string' },
+                        },
+                      },
+                    },
                   },
                 },
               },
@@ -165,6 +235,49 @@ export const chatRoutesDocs = {
             },
           },
         },
+      },
+    },
+  },
+  '/chats/ai/suggestion': {
+    post: {
+      tags: ['Chats'],
+      summary: 'Get AI suggestion for message',
+      description: 'Requires authentication. Returns an AI-generated suggestion based on the provided prompt.',
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['prompt'],
+              properties: {
+                prompt: {
+                  type: 'string',
+                  description: 'The prompt for generating a suggestion',
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: 'AI suggestion',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  suggestion: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        400: { description: 'Invalid input' },
+        401: { description: 'Unauthorized' },
+        500: { description: 'Internal server error' },
       },
     },
   },
