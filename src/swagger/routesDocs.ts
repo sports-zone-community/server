@@ -5,6 +5,7 @@ import { authRoutesDocs } from './routes/auth.docs';
 import { userRoutesDocs } from './routes/user.docs';
 import { commentRoutesDocs } from './routes/comment.docs';
 import { postRoutesDocs } from './routes/post.docs';
+import { searchRoutesDocs } from './routes/search.docs';
 
 export const ROUTES_DOCS = {
   ...authRoutesDocs,
@@ -13,5 +14,6 @@ export const ROUTES_DOCS = {
   ...footballRoutesDocs,
   ...groupRoutesDocs,
   ...postRoutesDocs,
+  ...searchRoutesDocs,
   ...userRoutesDocs,
 };
